@@ -2,9 +2,15 @@ import {
   BOAT_X,
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
+  OXYGEN_BAR_HEIGHT,
+  OXYGEN_BAR_WIDTH,
+  OXYGEN_BAR_X,
+  OXYGEN_BAR_Y,
+  OXYGEN_MAX_BASE,
   PIXELS_PER_METER,
   WORLD_DEPTH,
 } from './constants.js';
+import { getDiveResultText, getOxygenBarHud } from './ui.js';
 
 /**
  * Compute integer-scaled canvas dimensions and letterbox offsets for a viewport.
@@ -146,4 +152,45 @@ export function renderDive(ctx, state) {
   ctx.fillStyle = '#e07a5f';
   ctx.fillRect(-dir * (diverRadiusPx + 4), Math.round(diver.finSway * 2) - 1, dir * 4, 2);
   ctx.restore();
+
+  // HUD: oxygen bar at top left with ascent marker
+  if (typeof state.oxygen === 'number') {
+    const hud = getOxygenBarHud({
+      oxygen: state.oxygen,
+      oxygenMax: state.oxygenMax ?? OXYGEN_MAX_BASE,
+      requiredOxygen: state.requiredOxygen ?? 0,
+      elapsedTime: state.elapsedTime ?? 0,
+    });
+
+    ctx.fillStyle = '#091526';
+    ctx.fillRect(OXYGEN_BAR_X - 1, OXYGEN_BAR_Y - 1, OXYGEN_BAR_WIDTH + 2, OXYGEN_BAR_HEIGHT + 2);
+
+    ctx.fillStyle = '#1b263b';
+    ctx.fillRect(OXYGEN_BAR_X, OXYGEN_BAR_Y, OXYGEN_BAR_WIDTH, OXYGEN_BAR_HEIGHT);
+
+    ctx.fillStyle = hud.warning ? '#e63946' : '#4cc9f0';
+    ctx.fillRect(
+      OXYGEN_BAR_X,
+      OXYGEN_BAR_Y,
+      Math.round(hud.fillRatio * OXYGEN_BAR_WIDTH),
+      OXYGEN_BAR_HEIGHT
+    );
+
+    const markerX = OXYGEN_BAR_X + Math.round(hud.markerRatio * OXYGEN_BAR_WIDTH);
+    ctx.fillStyle = hud.flashingRed && hud.flashOn ? '#ff3b30' : '#ffffff';
+    ctx.fillRect(markerX, OXYGEN_BAR_Y - 1, 1, OXYGEN_BAR_HEIGHT + 2);
+  }
+
+  // Minimal dive result overlay text
+  const resultText = getDiveResultText(state.phase);
+  if (resultText && typeof ctx.fillText === 'function') {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fillRect(0, Math.floor(CANVAS_HEIGHT / 2) - 18, CANVAS_WIDTH, 36);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(resultText, CANVAS_WIDTH / 2, Math.floor(CANVAS_HEIGHT / 2) - 2);
+    ctx.font = '8px monospace';
+    ctx.fillText('Press Enter for new dive', CANVAS_WIDTH / 2, Math.floor(CANVAS_HEIGHT / 2) + 12);
+  }
 }

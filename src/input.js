@@ -74,6 +74,8 @@ export function createInput(targetWindow, canvas) {
           keys.has('ShiftLeft') ||
           keys.has('ShiftRight') ||
           keys.has('Shift'),
+        // TEMPORARY: Enter starts a new dive until T12 (Screens) is implemented.
+        restart: keys.has('Enter') || keys.has('NumpadEnter'),
         mouseX: worldMouse.mouseX,
         mouseY: worldMouse.mouseY,
       };

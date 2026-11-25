@@ -94,3 +94,29 @@ export const CAMERA_WIDTH = CANVAS_WIDTH / PIXELS_PER_METER;
 export const CAMERA_HEIGHT = CANVAS_HEIGHT / PIXELS_PER_METER;
 export const CAMERA_SMOOTHING = 8.0;
 export const CAMERA_MIN_Y = -2;
+
+// Oxygen (Spec 1, 1.1)
+export const OXYGEN_MAX_BASE = 100;
+export const MOVE_IDLE = 0.7;
+export const MOVE_SWIM = 1.0;
+export const MOVE_FAST = 1.8;
+export const WEIGHT_PER_FISH = 0.03;
+export const EQUALIZE_COST = 5;
+export const SHOT_COST = 1;
+export const ASCENT_RISK_DEPTH = 10;
+export const ASCENT_RISK_MULT = 1.5;
+export const ASCENT_SPEED = 1.5;
+export const ASCENT_SAFETY = 1.25;
+
+// Dive state machine (Spec 5.6)
+export const DIVE_ARM_DEPTH = 1.0;
+export const DIVE_PHASE_DIVING = 'DIVING';
+export const DIVE_PHASE_SUCCESS = 'SUCCESS';
+export const DIVE_PHASE_BLACKOUT = 'BLACKOUT';
+
+// HUD layout & timing (Spec 8.2)
+export const OXYGEN_BAR_X = 8;
+export const OXYGEN_BAR_Y = 8;
+export const OXYGEN_BAR_WIDTH = 80;
+export const OXYGEN_BAR_HEIGHT = 8;
+export const OXYGEN_FLASH_HZ = 4;
