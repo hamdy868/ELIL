@@ -10,6 +10,7 @@ import {
 import { equalize, stepEar } from './ear.js';
 import { stepOxygen } from './oxygen.js';
 import { createDiveState, step as stepPhysics } from './physics.js';
+import { createHuntingState, stepHunting } from './hunting.js';
 
 const STEP_EPSILON = 1e-12;
 
@@ -44,6 +45,7 @@ export function createGameState({ profile, oxygenMax, terrain } = {}) {
 
   return {
     ...dive,
+    ...createHuntingState({ x: dive.diver.x, y: dive.diver.y }),
     profile: profile ?? { money: 0, upgrades: {} },
     phase: DIVE_PHASE_DIVING,
     oxygen: maxOx,
@@ -100,12 +102,13 @@ export function stepDive(state, input = {}, dt = FIXED_DT) {
     depth: nextDepth,
     movingTowardSurface,
   });
+  const nextWithHunting = stepHunting(nextWithOxygen, input, dt);
 
   const elapsedTime = (current.elapsedTime ?? 0) + dt;
 
-  if (nextWithOxygen.oxygen <= 0) {
+  if (nextWithHunting.oxygen <= 0) {
     return {
-      ...nextWithOxygen,
+      ...nextWithHunting,
       phase: DIVE_PHASE_BLACKOUT,
       oxygen: 0,
       fishCarried: 0,
@@ -121,9 +124,9 @@ export function stepDive(state, input = {}, dt = FIXED_DT) {
   }
 
   if (diveArmed && nextDepth <= 0) {
-    const fish = [...(current.catchList ?? [])];
+    const fish = [...(nextWithHunting.catchList ?? [])];
     return {
-      ...nextWithOxygen,
+      ...nextWithHunting,
       phase: DIVE_PHASE_SUCCESS,
       oxygen: current.oxygenMax,
       requiredOxygen: 0,
@@ -143,7 +146,7 @@ export function stepDive(state, input = {}, dt = FIXED_DT) {
   }
 
   return {
-    ...nextWithOxygen,
+    ...nextWithHunting,
     phase: DIVE_PHASE_DIVING,
     prevEqualizeHeld: equalizeHeld,
     diveArmed,

@@ -2,10 +2,12 @@ import {
   BOAT_X,
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
+  DIVER_RADIUS,
   OXYGEN_BAR_HEIGHT,
   OXYGEN_BAR_WIDTH,
   OXYGEN_BAR_X,
   OXYGEN_BAR_Y,
+  RELOAD_TIME,
   OXYGEN_MAX_BASE,
   PIXELS_PER_METER,
   WORLD_DEPTH,
@@ -157,6 +159,55 @@ export function renderDive(ctx, state) {
   ctx.fillStyle = '#e07a5f';
   ctx.fillRect(-dir * (diverRadiusPx + 4), Math.round(diver.finSway * 2) - 1, dir * 4, 2);
   ctx.restore();
+
+  // Placeholder target, straight-flying arrows, and aiming/reload HUD.
+  const hunting = state;
+  if (hunting.targetFish) {
+    ctx.fillStyle = '#e89152';
+    ctx.beginPath();
+    ctx.arc(
+      Math.round((hunting.targetFish.x - camera.x) * PIXELS_PER_METER),
+      Math.round((hunting.targetFish.y - camera.y) * PIXELS_PER_METER),
+      Math.max(1, Math.round(hunting.targetFish.radius * PIXELS_PER_METER)),
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+  ctx.strokeStyle = '#f5f5f5';
+  for (const arrow of hunting.arrows ?? []) {
+    const x = (arrow.x - camera.x) * PIXELS_PER_METER;
+    const y = (arrow.y - camera.y) * PIXELS_PER_METER;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + arrow.dx * DIVER_RADIUS * PIXELS_PER_METER, y + arrow.dy * DIVER_RADIUS * PIXELS_PER_METER);
+    ctx.stroke();
+  }
+  if (typeof hunting.mouseX === 'number' && typeof hunting.mouseY === 'number') {
+    const crossX = Math.round((hunting.mouseX - camera.x) * PIXELS_PER_METER);
+    const crossY = Math.round((hunting.mouseY - camera.y) * PIXELS_PER_METER);
+    const crossRadius = Math.max(2, Math.round(DIVER_RADIUS * PIXELS_PER_METER / 2));
+    const reloading = (hunting.reloadRemaining ?? 0) > 0;
+    ctx.strokeStyle = reloading ? '#9299a3' : '#f5f5f5';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(crossX - crossRadius, crossY);
+    ctx.lineTo(crossX + crossRadius, crossY);
+    ctx.moveTo(crossX, crossY - crossRadius);
+    ctx.lineTo(crossX, crossY + crossRadius);
+    ctx.stroke();
+    const reloadRatio = Math.max(0, Math.min(1, 1 - (hunting.reloadRemaining ?? 0) / RELOAD_TIME));
+    ctx.fillStyle = '#091526';
+    ctx.fillRect(crossX - crossRadius, crossY + crossRadius + 2, crossRadius * 2, 2);
+    ctx.fillStyle = '#4cc9f0';
+    ctx.fillRect(crossX - crossRadius, crossY + crossRadius + 2, Math.round(crossRadius * 2 * reloadRatio), 2);
+  }
+  if (typeof ctx.fillText === 'function' && typeof state.fishCarried === 'number') {
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Catch: ${state.fishCarried}`, OXYGEN_BAR_X, CANVAS_HEIGHT - OXYGEN_BAR_Y);
+  }
 
   // HUD: oxygen bar at top left with ascent marker
   if (typeof state.oxygen === 'number') {

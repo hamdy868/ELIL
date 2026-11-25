@@ -26,6 +26,7 @@ export function clientToWorld(clientX, clientY, rect, camera) {
 export function createInput(targetWindow, canvas) {
   const keys = new Set();
   let pointer = null;
+  let fireHeld = false;
 
   function normalizeKey(event) {
     if (event.code) return event.code;
@@ -42,16 +43,27 @@ export function createInput(targetWindow, canvas) {
 
   function onBlur() {
     keys.clear();
+    fireHeld = false;
   }
 
   function onMouseMove(event) {
     pointer = { clientX: event.clientX, clientY: event.clientY };
   }
 
+  function onMouseDown(event) {
+    if (event.button === 0) fireHeld = true;
+  }
+
+  function onMouseUp(event) {
+    if (event.button === 0) fireHeld = false;
+  }
+
   targetWindow.addEventListener('keydown', onKeyDown);
   targetWindow.addEventListener('keyup', onKeyUp);
   targetWindow.addEventListener('blur', onBlur);
   targetWindow.addEventListener('mousemove', onMouseMove);
+  targetWindow.addEventListener('mousedown', onMouseDown);
+  targetWindow.addEventListener('mouseup', onMouseUp);
 
   return {
     getInput(camera) {
@@ -79,6 +91,7 @@ export function createInput(targetWindow, canvas) {
         restart: keys.has('Enter') || keys.has('NumpadEnter'),
         mouseX: worldMouse.mouseX,
         mouseY: worldMouse.mouseY,
+        fireHeld,
       };
     },
     destroy() {
@@ -86,6 +99,8 @@ export function createInput(targetWindow, canvas) {
       targetWindow.removeEventListener('keyup', onKeyUp);
       targetWindow.removeEventListener('blur', onBlur);
       targetWindow.removeEventListener('mousemove', onMouseMove);
+      targetWindow.removeEventListener('mousedown', onMouseDown);
+      targetWindow.removeEventListener('mouseup', onMouseUp);
     },
   };
 }
