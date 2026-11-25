@@ -10,7 +10,12 @@ import {
   PIXELS_PER_METER,
   WORLD_DEPTH,
 } from './constants.js';
-import { getDiveResultText, getOxygenBarHud } from './ui.js';
+import {
+  getDepthCounterText,
+  getDiveResultText,
+  getEarHud,
+  getOxygenBarHud,
+} from './ui.js';
 
 /**
  * Compute integer-scaled canvas dimensions and letterbox offsets for a viewport.
@@ -179,6 +184,62 @@ export function renderDive(ctx, state) {
     const markerX = OXYGEN_BAR_X + Math.round(hud.markerRatio * OXYGEN_BAR_WIDTH);
     ctx.fillStyle = hud.flashingRed && hud.flashOn ? '#ff3b30' : '#ffffff';
     ctx.fillRect(markerX, OXYGEN_BAR_Y - 1, 1, OXYGEN_BAR_HEIGHT + 2);
+  }
+
+  // Ear HUD, depth counter, edge pulses, and injury line
+  const earHud = getEarHud({
+    earDebt: state.earDebt ?? 0,
+    earInjured: state.earInjured ?? false,
+    injuryDepth: state.injuryDepth ?? null,
+    elapsedTime: state.elapsedTime ?? 0,
+  });
+
+  if (typeof earHud.injuryLineDepth === 'number') {
+    const lineY = Math.round((earHud.injuryLineDepth - camera.y) * PIXELS_PER_METER);
+    if (lineY >= 0 && lineY < CANVAS_HEIGHT) {
+      ctx.fillStyle = '#ff3b30';
+      ctx.fillRect(0, lineY, CANVAS_WIDTH, 1);
+    }
+  }
+
+  if (earHud.edgePulse) {
+    ctx.save();
+    ctx.globalAlpha = earHud.edgePulse.alpha;
+    ctx.fillStyle = earHud.edgePulse.hex;
+    const edge = 4;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, edge);
+    ctx.fillRect(0, CANVAS_HEIGHT - edge, CANVAS_WIDTH, edge);
+    ctx.fillRect(0, edge, edge, CANVAS_HEIGHT - edge * 2);
+    ctx.fillRect(CANVAS_WIDTH - edge, edge, edge, CANVAS_HEIGHT - edge * 2);
+    ctx.restore();
+  }
+
+  // Depth counter at top right + ear indicator next to it
+  const indicatorSize = 8;
+  const indicatorX = CANVAS_WIDTH - 48;
+  const indicatorY = OXYGEN_BAR_Y;
+  ctx.fillStyle = '#091526';
+  ctx.fillRect(indicatorX - 1, indicatorY - 1, indicatorSize + 2, indicatorSize + 2);
+  ctx.fillStyle = earHud.indicatorHex;
+  ctx.fillRect(indicatorX, indicatorY, indicatorSize, indicatorSize);
+
+  if (earHud.injuryIcon) {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(indicatorX + 3, indicatorY + 1, 2, 4);
+    ctx.fillRect(indicatorX + 3, indicatorY + 6, 2, 1);
+  }
+
+  if (typeof ctx.fillText === 'function') {
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(getDepthCounterText(diver.y), CANVAS_WIDTH - 8, OXYGEN_BAR_Y + 7);
+
+    if (earHud.injuryMessage) {
+      ctx.fillStyle = '#ff6b6b';
+      ctx.textAlign = 'center';
+      ctx.fillText(earHud.injuryMessage, CANVAS_WIDTH / 2, 26);
+    }
   }
 
   // Minimal dive result overlay text

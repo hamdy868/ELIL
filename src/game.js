@@ -3,9 +3,11 @@ import {
   DIVE_PHASE_BLACKOUT,
   DIVE_PHASE_DIVING,
   DIVE_PHASE_SUCCESS,
+  EAR_STAGE_NORMAL,
   FIXED_DT,
   OXYGEN_MAX_BASE,
 } from './constants.js';
+import { equalize, stepEar } from './ear.js';
 import { stepOxygen } from './oxygen.js';
 import { createDiveState, step as stepPhysics } from './physics.js';
 
@@ -48,6 +50,11 @@ export function createGameState({ profile, oxygenMax, terrain } = {}) {
     oxygenMax: maxOx,
     requiredOxygen: 0,
     oxygenWarning: false,
+    earDebt: 0,
+    earStage: EAR_STAGE_NORMAL,
+    earInjured: false,
+    injuryDepth: null,
+    prevEqualizeHeld: false,
     diveArmed: false,
     catchList: [],
     elapsedTime: 0,
@@ -56,7 +63,7 @@ export function createGameState({ profile, oxygenMax, terrain } = {}) {
 }
 
 /**
- * Advance one simulation step of the dive state machine (physics + oxygen + dive end).
+ * Advance one simulation step of the dive state machine (physics + ear + oxygen + dive end).
  * Pure function. Does not mutate state or state.profile.
  * @param {object} state
  * @param {object} [input]
@@ -67,13 +74,26 @@ export function stepDive(state, input = {}, dt = FIXED_DT) {
     return state;
   }
 
-  const prevDepth = state.diver.y;
-  const nextPhysics = stepPhysics(state, input, dt);
-  const nextDepth = nextPhysics.diver.y;
-  const diveArmed = Boolean(state.diveArmed || nextDepth > DIVE_ARM_DEPTH);
-  const movingTowardSurface = nextDepth < prevDepth;
+  let current = state;
+  const equalizeHeld = Boolean(input.equalize);
+  if (equalizeHeld && !state.prevEqualizeHeld) {
+    current = equalize(current);
+  }
 
-  const nextWithOxygen = stepOxygen(nextPhysics, {
+  const prevDepth = current.diver.y;
+  const nextPhysics = stepPhysics(current, input, dt);
+  const nextDepth = nextPhysics.diver.y;
+  const diveArmed = Boolean(current.diveArmed || nextDepth > DIVE_ARM_DEPTH);
+  const movingTowardSurface = nextDepth < prevDepth;
+  const downwardSpeed = dt > 0 ? (nextDepth - prevDepth) / dt : 0;
+
+  const nextWithEar = stepEar(nextPhysics, {
+    prevDepth,
+    depth: nextDepth,
+    downwardSpeed,
+  });
+
+  const nextWithOxygen = stepOxygen(nextWithEar, {
     input,
     dt,
     prevDepth,
@@ -81,7 +101,7 @@ export function stepDive(state, input = {}, dt = FIXED_DT) {
     movingTowardSurface,
   });
 
-  const elapsedTime = (state.elapsedTime ?? 0) + dt;
+  const elapsedTime = (current.elapsedTime ?? 0) + dt;
 
   if (nextWithOxygen.oxygen <= 0) {
     return {
@@ -90,6 +110,7 @@ export function stepDive(state, input = {}, dt = FIXED_DT) {
       oxygen: 0,
       fishCarried: 0,
       catchList: [],
+      prevEqualizeHeld: equalizeHeld,
       diveArmed,
       elapsedTime,
       result: {
@@ -100,13 +121,18 @@ export function stepDive(state, input = {}, dt = FIXED_DT) {
   }
 
   if (diveArmed && nextDepth <= 0) {
-    const fish = [...(state.catchList ?? [])];
+    const fish = [...(current.catchList ?? [])];
     return {
       ...nextWithOxygen,
       phase: DIVE_PHASE_SUCCESS,
-      oxygen: state.oxygenMax,
+      oxygen: current.oxygenMax,
       requiredOxygen: 0,
       oxygenWarning: false,
+      earDebt: 0,
+      earStage: EAR_STAGE_NORMAL,
+      earInjured: false,
+      injuryDepth: null,
+      prevEqualizeHeld: equalizeHeld,
       diveArmed,
       elapsedTime,
       result: {
@@ -119,6 +145,7 @@ export function stepDive(state, input = {}, dt = FIXED_DT) {
   return {
     ...nextWithOxygen,
     phase: DIVE_PHASE_DIVING,
+    prevEqualizeHeld: equalizeHeld,
     diveArmed,
     elapsedTime,
     result: null,

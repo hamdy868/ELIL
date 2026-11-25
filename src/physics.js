@@ -12,13 +12,17 @@ import {
   DIVER_MAX_TILT_RAD,
   DIVER_RADIUS,
   DIVE_START_VY,
+  EAR_STAGE_NORMAL,
+  EAR_STAGE_PAIN,
   FIN_SWAY_RATE,
   FIXED_DT,
+  PAIN_SPEED_MULT,
   SPEED_FAST,
   SPEED_NORMAL,
   WORLD_DEPTH,
   WORLD_WIDTH,
 } from './constants.js';
+import { getEarStage } from './ear.js';
 import { createTerrain, zoneAt } from './world.js';
 
 function clamp(value, min, max) {
@@ -140,6 +144,10 @@ export function createDiveState(overrides = {}) {
 
   return {
     fishCarried: 0,
+    earDebt: 0,
+    earStage: EAR_STAGE_NORMAL,
+    earInjured: false,
+    injuryDepth: null,
     zone: zoneAt(diver.y),
     ...overrides,
     terrain,
@@ -171,7 +179,9 @@ export function step(state, input = {}, dt = FIXED_DT) {
     dirX /= dirLen;
     dirY /= dirLen;
 
-    const maxSpeed = input.fast ? SPEED_FAST : SPEED_NORMAL;
+    const earStage = state.earStage ?? getEarStage(state.earDebt ?? 0);
+    const speedMult = earStage === EAR_STAGE_PAIN ? PAIN_SPEED_MULT : 1.0;
+    const maxSpeed = (input.fast ? SPEED_FAST : SPEED_NORMAL) * speedMult;
     const accel = input.fast ? ACCEL_FAST : ACCEL_NORMAL;
     const targetVx = dirX * maxSpeed;
     const targetVy = dirY * maxSpeed;
@@ -218,6 +228,11 @@ export function step(state, input = {}, dt = FIXED_DT) {
       if (y < 0) {
         y = 0;
         if (vy < 0) vy = 0;
+      }
+
+      if (state.earInjured && typeof state.injuryDepth === 'number' && y > state.injuryDepth) {
+        y = state.injuryDepth;
+        if (vy > 0) vy = 0;
       }
 
       ({ x, y, vx, vy } = resolveRockCollisions({ x, y }, { vx, vy }, diver.radius, rocks));

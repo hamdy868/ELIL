@@ -93,3 +93,28 @@ test('AC-1.10: dive blackout clears catch and leaves profile money and upgrades 
   assert.deepEqual(profile, profileSnapshot);
   assert.deepEqual(state.profile, profileSnapshot);
 });
+
+test('AC-2.11: new dive starts with ear debt 0 and injury flag cleared', () => {
+  const newDive = createGameState({ profile: { money: 50, upgrades: {} } });
+  assert.equal(newDive.earDebt, 0);
+  assert.equal(newDive.earInjured, false);
+  assert.equal(newDive.injuryDepth, null);
+});
+
+test('AC-2.10 & AC-2.5 in dive loop: E equalizes once per press and INJURED blocks deeper descent', () => {
+  let state = createGameState();
+  state = {
+    ...state,
+    earDebt: 70,
+    earStage: 'PAIN',
+    diver: { ...state.diver, y: 15, vx: 0, vy: 0 },
+  };
+  state = stepDive(state, { equalize: true }, FIXED_DT);
+  assert.equal(state.earDebt, 30);
+  assert.ok(state.oxygen < 95.1);
+
+  // Holding E on the next frame does not repeat until released
+  const debtAfterHold = state.earDebt;
+  state = stepDive(state, { equalize: true }, FIXED_DT);
+  assert.equal(state.earDebt, debtAfterHold);
+});

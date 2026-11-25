@@ -5,7 +5,9 @@ import {
   CAMERA_WIDTH,
   DIVER_RADIUS,
   DIVE_START_VY,
+  EAR_STAGE_PAIN,
   FIXED_DT,
+  PAIN_SPEED_MULT,
   SPEED_FAST,
   SPEED_NORMAL,
   WORLD_DEPTH,
@@ -71,6 +73,40 @@ test('AC-6.4: releasing keys at 2.0 m/s decays speed to <= 0.1 m/s after 2 s', (
   state = runSteps(state, {}, 2.0);
   const speed = Math.hypot(state.diver.vx, state.diver.vy);
   assert.ok(speed <= 0.1, `expected speed <= 0.1 after 2 s, got ${speed}`);
+});
+
+test('AC-6.5: ear stage PAIN reduces normal swim max speed to 1.4 m/s', () => {
+  assert.equal(PAIN_SPEED_MULT, 0.7);
+  let state = createDiveState({
+    earDebt: 75,
+    earStage: EAR_STAGE_PAIN,
+    diver: { x: 60, y: 15, vx: 0, vy: 0 },
+  });
+  state = runSteps(state, { right: true }, 1.0);
+  const speed = Math.hypot(state.diver.vx, state.diver.vy);
+  assert.ok(Math.abs(speed - 1.4) <= 0.02, `expected max speed 1.4, got ${speed}`);
+});
+
+test('AC-2.10: INJURED blocks descending below injury depth, but allows returning down to injury depth', () => {
+  let state = createDiveState({
+    earDebt: 100,
+    earStage: 'INJURED',
+    earInjured: true,
+    injuryDepth: 20,
+    diver: { x: 60, y: 20, vx: 0, vy: 0 },
+  });
+
+  // Trying to descend below injuryDepth is rejected
+  state = runSteps(state, { down: true, fast: true }, 0.5);
+  assert.ok(state.diver.y <= 20 + 1e-9, `expected y <= 20, got ${state.diver.y}`);
+  assert.equal(state.diver.vy, 0);
+
+  // Ascend to 18 m, then descend again: allowed down to 20 m, stopped at 20 m
+  state = runSteps(state, { up: true }, 1.2);
+  assert.ok(state.diver.y < 19, 'expected diver to ascend above 19 m');
+
+  state = runSteps(state, { down: true }, 2.0);
+  assert.ok(Math.abs(state.diver.y - 20) <= 1e-6, `expected diver to stop at injuryDepth 20, got ${state.diver.y}`);
 });
 
 test('AC-6.6: carrying 5 fish leaves max speed unchanged', () => {

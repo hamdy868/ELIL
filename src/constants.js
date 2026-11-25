@@ -120,3 +120,23 @@ export const OXYGEN_BAR_Y = 8;
 export const OXYGEN_BAR_WIDTH = 80;
 export const OXYGEN_BAR_HEIGHT = 8;
 export const OXYGEN_FLASH_HZ = 4;
+
+// Ear pressure (Spec 2, 8.2, 8.3)
+export const EAR_DEBT_MAX = 100;
+export const EAR_BASE_RATE = 8;
+export const EAR_PRESSURE_SCALE_DEPTH = 10;
+export const FAST_DESCENT_MULT = 1.5;
+export const FAST_DESCENT_SPEED = 2.0;
+export const EQUALIZE_REDUCTION = 40;
+export const ASCENT_DEBT_RELIEF = 10;
+export const PAIN_SPEED_MULT = 0.7;
+
+export const EAR_WARNING_THRESHOLD = 40;
+export const EAR_PAIN_THRESHOLD = 70;
+export const EAR_INJURED_THRESHOLD = 100;
+export const EAR_STAGE_NORMAL = 'NORMAL';
+export const EAR_STAGE_WARNING = 'WARNING';
+export const EAR_STAGE_PAIN = 'PAIN';
+export const EAR_STAGE_INJURED = 'INJURED';
+export const EAR_PULSE_HZ = 2;
+export const EAR_INJURY_MESSAGE = 'Ears injured - cannot dive deeper';
