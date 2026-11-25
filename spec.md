@@ -224,7 +224,7 @@ Three background layers with relative scroll speeds: far 0.2 (ruins and haze), m
 
 ### 5.6 End of a dive
 
-- **Success:** reaching depth 0 at **any** horizontal position. The catch is sold automatically, lungs refill, ear debt resets to 0.
+- **Success:** reaching depth 0 at **any** horizontal position, **after the diver has been deeper than `DIVE_ARM_DEPTH = 1.0` m at least once** (the dive itself starts at depth 0, so without this rule it would end immediately). `[GAMEPLAY]` The catch is sold automatically, lungs refill, ear debt resets to 0.
 - **Failure:** blackout (oxygen 0). The catch of this dive is lost (section 1).
 
 ## 6. Controls and movement
@@ -426,7 +426,8 @@ Each row must become an automated test (name contains the ID). Tolerances are in
 | AC-5.3 | Try to go below the seabed | movement rejected |
 | AC-5.4 | Darkness at 0 / 15 / 40 m | 0% / 60% / 85% |
 | AC-5.5 | Base light radius | 5 m |
-| AC-5.6 | Surface reached at any x | dive success: catch sold, lungs refilled, ear debt 0 |
+| AC-5.12 | Dive just started at depth 0, diver has not yet been deeper than 1 m | the dive does not end |
+| AC-5.6 | Surface reached at any x, after having been deeper than 1 m | dive success: catch sold, lungs refilled, ear debt 0 |
 | AC-5.7 | 1000 dives, one crevice | grouper 600, moray 250, empty 150 (±50 each) |
 | AC-5.8 | Two consecutive dives | identical terrain |
 | AC-5.9 | Start of a dive | shallow: 15 sardines, 4 seabream, 2 jellyfish; deep: counts follow section 5.5 |
