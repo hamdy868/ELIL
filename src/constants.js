@@ -34,7 +34,6 @@ export const ROCK_MIN_TOP_DEPTH = 1;
 
 // Rock formations defined by x and radius only (y is computed from seabed / support)
 export const ROCK_FORMATIONS = [
-  // Shallow zone (< 15 m): 5 circles across 2 formations
   [
     { x: 7, radius: 2.2 },
     { x: 10.5, radius: 2.0 },
@@ -43,34 +42,6 @@ export const ROCK_FORMATIONS = [
   [
     { x: 18, radius: 2.1 },
     { x: 19.2, radius: 1.4, support: 0 },
-  ],
-  // Deep zone (>= 15 m): 15 circles across 6 formations
-  [
-    { x: 35, radius: 2.0 },
-    { x: 38.2, radius: 2.2 },
-  ],
-  [
-    { x: 48, radius: 2.4 },
-    { x: 51.8, radius: 2.2 },
-    { x: 50.5, radius: 1.5, support: 1 },
-  ],
-  [
-    { x: 65, radius: 2.2 },
-    { x: 68.5, radius: 2.4 },
-    { x: 66.5, radius: 1.5, support: 0 },
-  ],
-  [
-    { x: 76, radius: 2.6 },
-    { x: 80.2, radius: 2.5 },
-    { x: 77.8, radius: 1.8, support: 0 },
-  ],
-  [
-    { x: 94, radius: 2.5 },
-    { x: 95.4, radius: 1.7, support: 0 },
-  ],
-  [
-    { x: 111, radius: 2.5 },
-    { x: 115, radius: 2.6 },
   ],
 ];
 
@@ -123,6 +94,25 @@ export const SEABREAM_DRAW_SIZE_PX = 10;
 export const SHALLOW_FISH_MIN_DEPTH = 2;
 export const SHALLOW_FISH_MAX_DEPTH = 13;
 export const SHALLOW_SEABREAM_COUNT = 4;
+export const CREVICE_COUNT_DEEP = 8;
+export const CREVICE_DEPTH = 3.0;
+export const CREVICE_MIN_WIDTH = 1.2;
+export const CREVICE_MAX_WIDTH = 2.5;
+export const CREVICE_WIDTH = 1.8;
+export const CREVICE_ROCK_RADIUS = 1.2;
+export const CREVICE_START_X_RATIO = 0.4;
+export const GROUPER_SLOT_PROBABILITY = 0.6;
+export const MORAY_SLOT_PROBABILITY = 0.25;
+export const GROUPER_FRONT_OFFSET = 0.8;
+export const GROUPER_BACK_OFFSET = 2.4;
+export const GROUPER_EMERGE_DISTANCE = 8;
+export const GROUPER_EMERGE_TIME = 4;
+export const GROUPER_FLEE_SPEED_MULT = 0.8;
+export const GROUPER_VALUE = 80;
+export const GROUPER_DRAW_SIZE_PX = 20;
+export const MORAY_MARKER_SIZE_PX = 4;
+export const CREVICE_SIDE_WALL_STACK_OFFSET = (CREVICE_DEPTH + 2 * DIVER_RADIUS) / 2;
+export const CREVICE_VALIDATION_EPSILON = 1e-9;
 export const FISH_ROAM_SPEED = 0.3;
 export const SARDINE_SCHOOL_SPREAD = 0.5;
 export const GENERIC_FISH_HIT_RADIUS = 0.4;

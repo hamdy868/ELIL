@@ -38,7 +38,7 @@ test('AC-6.8: dive starts at boat, depth 0, with downward velocity 1.0 m/s and f
 
 test('AC-6.1: W from rest reaches 2.0 m/s within 0.5 s (+-0.1)', () => {
   let state = createDiveState({
-    diver: { x: 60, y: 20, vx: 0, vy: 0 },
+    diver: { x: 100, y: 20, vx: 0, vy: 0 },
   });
   state = runSteps(state, { up: true }, 0.5);
   const speed = Math.hypot(state.diver.vx, state.diver.vy);
@@ -93,7 +93,7 @@ test('AC-2.10: INJURED blocks descending below injury depth, but allows returnin
     earStage: 'INJURED',
     earInjured: true,
     injuryDepth: 20,
-    diver: { x: 60, y: 20, vx: 0, vy: 0 },
+    diver: { x: 100, y: 20, vx: 0, vy: 0 },
   });
 
   // Trying to descend below injuryDepth is rejected

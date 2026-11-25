@@ -3,6 +3,8 @@ import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   DIVER_RADIUS,
+  GROUPER_DRAW_SIZE_PX,
+  MORAY_MARKER_SIZE_PX,
   SARDINE_DRAW_SIZE_PX,
   SEABREAM_DRAW_SIZE_PX,
   OXYGEN_BAR_HEIGHT,
@@ -166,16 +168,30 @@ export function renderDive(ctx, state) {
   const hunting = state;
   for (const fish of hunting.fish ?? []) {
     const sardine = fish.type === 'sardine';
+    const fishSize = sardine
+      ? SARDINE_DRAW_SIZE_PX
+      : fish.type === 'grouper'
+        ? GROUPER_DRAW_SIZE_PX
+        : SEABREAM_DRAW_SIZE_PX;
     ctx.fillStyle = sardine ? '#b7e4c7' : '#e89152';
     ctx.beginPath();
     ctx.arc(
       Math.round((fish.x - camera.x) * PIXELS_PER_METER),
       Math.round((fish.y - camera.y) * PIXELS_PER_METER),
-      (sardine ? SARDINE_DRAW_SIZE_PX : SEABREAM_DRAW_SIZE_PX) / 2,
+      fishSize / 2,
       0,
       Math.PI * 2
     );
     ctx.fill();
+  }
+  for (const marker of state.morayMarkers ?? []) {
+    ctx.fillStyle = '#e9c46a';
+    ctx.fillRect(
+      Math.round((marker.x - camera.x) * PIXELS_PER_METER) - MORAY_MARKER_SIZE_PX / 2,
+      Math.round((marker.y - camera.y) * PIXELS_PER_METER) - MORAY_MARKER_SIZE_PX / 2,
+      MORAY_MARKER_SIZE_PX,
+      MORAY_MARKER_SIZE_PX
+    );
   }
   ctx.strokeStyle = '#f5f5f5';
   for (const arrow of hunting.arrows ?? []) {

@@ -13,7 +13,14 @@ function handleResize() {
 window.addEventListener('resize', handleResize);
 handleResize();
 
-let state = createGameState();
+let lastDiveSeed = Date.now();
+
+function nextDiveSeed() {
+  lastDiveSeed = Math.max(Date.now(), lastDiveSeed + 1);
+  return lastDiveSeed;
+}
+
+let state = createGameState({ seed: nextDiveSeed() });
 const input = createInput(window, canvas);
 let wasRestartHeld = false;
 
@@ -23,7 +30,7 @@ const loop = createFixedLoop((dt) => {
   // TEMPORARY: Enter starts a new dive until T12 (Screens) is implemented.
   if (state.phase !== DIVE_PHASE_DIVING) {
     if (currentInput.restart && !wasRestartHeld) {
-      state = createGameState({ profile: state.profile });
+      state = createGameState({ profile: state.profile, seed: nextDiveSeed() });
     }
     wasRestartHeld = currentInput.restart;
     return;

@@ -8,7 +8,7 @@ import {
   SPEAR_RANGE,
 } from '../src/constants.js';
 import { createHuntingState, stepHunting } from '../src/hunting.js';
-import { createFish, createSardineSchool } from '../src/fish.js';
+import { createFish, createGrouper, createSardineSchool, stepFish } from '../src/fish.js';
 
 function stateWith(overrides = {}) {
   return {
@@ -129,4 +129,22 @@ test('AC-4.6: shooting a sardine school catches exactly one sardine', () => {
   assert.equal(school.length, 15);
   assert.equal(result.fishCarried, 1);
   assert.equal(result.fish.length, 14);
+});
+
+test('AC-4.8: arrow aimed at a retreated grouper passes through without catching it', () => {
+  const crevice = { id: 0, mouth: { x: 0, y: 10 } };
+  const grouper = stepFish(createGrouper(crevice), { player: { x: 0, y: 9 }, dt: FIXED_DT });
+  assert.equal(grouper.retreated, true);
+  const state = stateWith({
+    diver: { x: -3, y: grouper.y, radius: 0.4 },
+    fish: [grouper],
+  });
+  let next = stepHunting(state, { fireHeld: true, mouseX: 10, mouseY: grouper.y }, FIXED_DT);
+  next = stepHunting(next, { fireHeld: false, mouseX: 10, mouseY: grouper.y }, FIXED_DT);
+  for (let i = 0; i < 12; i++) {
+    next = stepHunting(next, { fireHeld: false, mouseX: 10, mouseY: grouper.y }, FIXED_DT);
+  }
+  assert.equal(next.fishCarried, 0);
+  assert.equal(next.fish.length, 1);
+  assert.ok(next.arrows.length > 0);
 });

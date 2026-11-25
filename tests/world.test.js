@@ -27,12 +27,13 @@ test('AC-5.8: two consecutive createTerrain calls return identical terrain', () 
   assert.deepEqual(second, third);
 });
 
-test('terrain slopes from 15 m at left to 40 m at right with ~20 rocks (more deep than shallow)', () => {
+test('terrain slopes from 15 m at left to 40 m at right and includes distributed deep crevice walls', () => {
   const terrain = createTerrain();
   assert.equal(getSeabedDepth(terrain, 0), 15);
   assert.equal(getSeabedDepth(terrain, WORLD_WIDTH), WORLD_DEPTH);
 
-  assert.ok(terrain.rocks.length >= 18 && terrain.rocks.length <= 22, `expected ~20 rocks, got ${terrain.rocks.length}`);
+  assert.ok(terrain.rocks.length > 20, `expected added crevice walls, got ${terrain.rocks.length} rocks`);
+  assert.equal(terrain.crevices.length, 8);
 
   const shallowRocks = terrain.rocks.filter((r) => zoneAt(r.y) === 'SHALLOW');
   const deepRocks = terrain.rocks.filter((r) => zoneAt(r.y) === 'DEEP');
@@ -106,6 +107,7 @@ test('formations have 1 to 4 circles with >= 1.2 m gaps between formations', () 
     for (let j = i + 1; j < formations.length; j++) {
       for (const a of formations[i]) {
         for (const b of formations[j]) {
+          if (a.creviceId !== undefined && a.creviceId === b.creviceId) continue;
           const edgeGap = Math.hypot(a.x - b.x, a.y - b.y) - (a.radius + b.radius);
           assert.ok(
             edgeGap >= 1.2,

@@ -7,6 +7,12 @@ import {
   FLEE_DIST_SMALL,
   GENERIC_FISH_FLEE_SPEED_MULT,
   GENERIC_FISH_HIT_RADIUS,
+  GROUPER_BACK_OFFSET,
+  GROUPER_EMERGE_DISTANCE,
+  GROUPER_EMERGE_TIME,
+  GROUPER_FLEE_SPEED_MULT,
+  GROUPER_FRONT_OFFSET,
+  GROUPER_VALUE,
   RETURN_TO_ROAM_DELAY,
   SARDINE_FLEE_SPEED_MULT,
   SARDINE_HIT_RADIUS,
@@ -79,6 +85,32 @@ export function createFish({
     rockX: rock?.x ?? null,
     rockY: rock?.y ?? null,
     rockRadius: rock?.radius ?? 0,
+  };
+}
+
+/** Create a grouper at the front of a crevice with its fixed front/back coordinates. */
+export function createGrouper(crevice) {
+  const frontX = crevice.mouth.x;
+  const frontY = crevice.mouth.y + GROUPER_FRONT_OFFSET;
+  const backX = crevice.mouth.x;
+  const backY = crevice.mouth.y + GROUPER_BACK_OFFSET;
+  return {
+    ...createFish({
+      id: `grouper-${crevice.id}`,
+      type: 'grouper',
+      size: 'large',
+      x: frontX,
+      y: frontY,
+      fleeSpeed: GROUPER_FLEE_SPEED_MULT,
+      rock: null,
+    }),
+    value: GROUPER_VALUE,
+    creviceId: crevice.id,
+    frontX,
+    frontY,
+    backX,
+    backY,
+    retreated: false,
   };
 }
 
@@ -183,6 +215,39 @@ function advanceFish(fish, {
 
 /** Advance one fish, entering FLEE in range and returning to ROAM after the delay. */
 export function stepFish(fish, context = {}) {
+  if (fish.type === 'grouper') {
+    const player = context.player ?? { x: 0, y: 0 };
+    const dt = context.dt ?? 0;
+    if (!fish.retreated) {
+      if (distanceBetween(fish, player) <= fleeDistance(fish, context.weaponRaised)) {
+        return {
+          ...fish,
+          state: FLEE,
+          x: fish.backX,
+          y: fish.backY,
+          retreated: true,
+          outsideFleeTime: 0,
+          speed: SPEED_NORMAL * fish.fleeSpeed,
+        };
+      }
+      return { ...fish, state: ROAM, x: fish.frontX, y: fish.frontY, outsideFleeTime: 0 };
+    }
+
+    const outsideFleeTime = distanceBetween(fish, player) >= GROUPER_EMERGE_DISTANCE
+      ? fish.outsideFleeTime + dt
+      : 0;
+    if (outsideFleeTime >= GROUPER_EMERGE_TIME) {
+      return {
+        ...fish,
+        state: ROAM,
+        x: fish.frontX,
+        y: fish.frontY,
+        retreated: false,
+        outsideFleeTime: 0,
+      };
+    }
+    return { ...fish, state: FLEE, x: fish.backX, y: fish.backY, outsideFleeTime };
+  }
   return advanceFish(fish, context);
 }
 
@@ -192,7 +257,7 @@ export function stepFishPopulation(fishList = [], context = {}, dt = context.dt 
   const results = new Array(fishList.length);
   fishList.forEach((fish, index) => {
     if (!fish.schoolId) {
-      results[index] = advanceFish(fish, { ...context, dt });
+      results[index] = stepFish(fish, { ...context, dt });
       return;
     }
     if (!groups.has(fish.schoolId)) groups.set(fish.schoolId, []);

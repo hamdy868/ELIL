@@ -13,7 +13,8 @@ import { stepOxygen } from './oxygen.js';
 import { createDiveState, step as stepPhysics } from './physics.js';
 import { createHuntingState, stepHunting } from './hunting.js';
 import { createRng } from './rng.js';
-import { spawnShallowFish, stepFishPopulation } from './fish.js';
+import { createGrouper, spawnShallowFish, stepFishPopulation } from './fish.js';
+import { assignCreviceSlots } from './world.js';
 
 const STEP_EPSILON = 1e-12;
 
@@ -45,11 +46,27 @@ export function createFixedLoop(onStep, dt = FIXED_DT) {
 export function createGameState({ profile, oxygenMax, terrain, seed = FISH_DEFAULT_SEED } = {}) {
   const maxOx = oxygenMax ?? profile?.upgrades?.oxygenMax ?? OXYGEN_MAX_BASE;
   const dive = createDiveState(terrain ? { terrain } : {});
+  const rng = createRng(seed);
+  const diveTerrain = {
+    ...dive.terrain,
+    crevices: assignCreviceSlots(dive.terrain.crevices ?? [], rng),
+  };
+  const morayMarkers = diveTerrain.crevices
+    .filter((crevice) => crevice.slot === 'moray')
+    .map((crevice) => ({ creviceId: crevice.id, x: crevice.mouth.x, y: crevice.mouth.y }));
+  const fish = [
+    ...spawnShallowFish({ terrain: diveTerrain, rng }),
+    ...diveTerrain.crevices
+      .filter((crevice) => crevice.slot === 'grouper')
+      .map(createGrouper),
+  ];
 
   return {
     ...dive,
+    terrain: diveTerrain,
     ...createHuntingState(),
-    fish: spawnShallowFish({ terrain: dive.terrain, rng: createRng(seed) }),
+    fish,
+    morayMarkers,
     profile: profile ?? { money: 0, upgrades: {} },
     phase: DIVE_PHASE_DIVING,
     oxygen: maxOx,
