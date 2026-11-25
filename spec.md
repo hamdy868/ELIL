@@ -193,6 +193,9 @@ The seabed slopes from about 15 m at the left edge to 40 m at the right edge, so
 ### 5.2 Rocks and crevices `[GAMEPLAY]`
 
 - Rocks are solid. The diver cannot enter them and slides along their surface with no rebound.
+- **Rocks rest on the seabed. No rock floats in open water.** Every rock circle is either **grounded** (its lowest point touches the seabed, and it is embedded in the seabed by at most half of its radius) or **stacked** (it rests on top of another supported rock: it overlaps that rock and its center is higher).
+- Rocks are grouped into **formations**: mounds of 1 to 4 overlapping circles. Collision uses the circles. The drawn look will be replaced by pixel art later.
+- **Draw order:** rocks are drawn before the seabed, so the embedded part of a rock is hidden by the ground and the rock looks planted.
 - A crevice is a gap between rocks, 1.2 to 2.5 m wide, closed at the back, with no other exit.
 - `CREVICE_COUNT_DEEP = 8` crevices in the deep zone (provisional; finalize when the map is designed).
 - Each crevice has a **hide slot** filled at the start of every dive using the seeded RNG:
@@ -418,6 +421,8 @@ Each row must become an automated test (name contains the ID). Tolerances are in
 |---|---|---|
 | AC-5.1 | Swim into a rock | slides along it, no penetration, no rebound |
 | AC-5.2 | Depth reaches 15.0 m | zone becomes DEEP |
+| AC-5.10 | Every rock circle in the terrain data | grounded (vertical gap between its bottom and the seabed at its x is ≤ 0.1 m + 0.05 × radius, and its embedded depth is ≤ 0.5 × radius) or stacked on a supported rock (overlaps it and its center is higher) |
+| AC-5.11 | Every rock circle in the terrain data | lies entirely inside 0 to `WORLD_WIDTH` horizontally and its top is below the surface (depth ≥ 1 m) |
 | AC-5.3 | Try to go below the seabed | movement rejected |
 | AC-5.4 | Darkness at 0 / 15 / 40 m | 0% / 60% / 85% |
 | AC-5.5 | Base light radius | 5 m |

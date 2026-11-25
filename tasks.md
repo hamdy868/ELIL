@@ -66,6 +66,12 @@ docs/trace.md            task → AC → commit log (for the presentation)
 
 ### Evening: the core pressure loop
 
+**T03b Fix rock placement** (est. 30 min) — *added after playtesting T03*
+- Spec: 5.2
+- AC: 5.10, 5.11 (plus the existing 5.1, 5.2, 5.8 must still pass)
+- Build: rocks defined as formations by x position and radius, with the vertical position **computed from the seabed profile** (never typed by hand). Add a pure validator and tests that check every rock against AC-5.10 and AC-5.11. Draw rocks before the seabed.
+- Done when: no rock floats, none is buried more than half, and the terrain is still identical on every call.
+
 **T04 Oxygen and dive end** (est. 1 h 30)
 - Spec: 1, 5.6
 - AC: 1.1–1.11, 5.6, 8.1, 8.2
