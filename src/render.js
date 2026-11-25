@@ -1,4 +1,10 @@
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from './constants.js';
+import {
+  BOAT_X,
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
+  PIXELS_PER_METER,
+  WORLD_DEPTH,
+} from './constants.js';
 
 /**
  * Compute integer-scaled canvas dimensions and letterbox offsets for a viewport.
@@ -42,4 +48,64 @@ export function renderPlaceholder(ctx) {
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   ctx.fillStyle = '#4fa3d1';
   ctx.fillRect(0, 0, CANVAS_WIDTH, 24);
+}
+
+/**
+ * Draw the dive scene using placeholder geometry (circle diver, flat seabed, boat).
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {object} state
+ */
+export function renderDive(ctx, state) {
+  const { diver, camera } = state;
+  const seabedDepth = state.seabedDepth ?? WORLD_DEPTH;
+
+  ctx.imageSmoothingEnabled = false;
+
+  // Water background
+  ctx.fillStyle = '#0c3559';
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  // Sky above depth 0
+  const surfaceScreenY = Math.round((0 - camera.y) * PIXELS_PER_METER);
+  if (surfaceScreenY > 0) {
+    ctx.fillStyle = '#4fa3d1';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, Math.min(CANVAS_HEIGHT, surfaceScreenY));
+  }
+
+  // Boat placeholder at surface, x = BOAT_X
+  const boatScreenX = Math.round((BOAT_X - camera.x) * PIXELS_PER_METER);
+  if (surfaceScreenY >= -20 && surfaceScreenY <= CANVAS_HEIGHT + 20) {
+    ctx.fillStyle = '#8b5a2b';
+    ctx.fillRect(boatScreenX - 24, surfaceScreenY - 8, 48, 8);
+  }
+
+  // Flat seabed placeholder
+  const seabedScreenY = Math.round((seabedDepth - camera.y) * PIXELS_PER_METER);
+  if (seabedScreenY < CANVAS_HEIGHT) {
+    ctx.fillStyle = '#3b2f22';
+    const top = Math.max(0, seabedScreenY);
+    ctx.fillRect(0, top, CANVAS_WIDTH, CANVAS_HEIGHT - top);
+  }
+
+  // Diver as placeholder circle with facing & tilt indicator
+  const diverScreenX = Math.round((diver.x - camera.x) * PIXELS_PER_METER);
+  const diverScreenY = Math.round((diver.y - camera.y) * PIXELS_PER_METER);
+  const diverRadiusPx = Math.max(1, Math.round(diver.radius * PIXELS_PER_METER));
+  const dir = diver.facing === 'left' ? -1 : 1;
+
+  ctx.save();
+  ctx.translate(diverScreenX, diverScreenY);
+  ctx.rotate(dir * diver.tilt);
+
+  ctx.fillStyle = '#f2c14e';
+  ctx.beginPath();
+  ctx.arc(0, 0, diverRadiusPx, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Facing & fin sway placeholder ticks
+  ctx.fillStyle = '#1b263b';
+  ctx.fillRect(dir * 2, -2, dir * 3, 3);
+  ctx.fillStyle = '#e07a5f';
+  ctx.fillRect(-dir * (diverRadiusPx + 4), Math.round(diver.finSway * 2) - 1, dir * 4, 2);
+  ctx.restore();
 }
