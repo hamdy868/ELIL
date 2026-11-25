@@ -1,0 +1,8 @@
+- Before any work, read spec.md and the matching task in tasks.md.
+- spec.md is the source of truth. Never edit it. If something is missing or ambiguous, stop and ask.
+- Work on one task at a time. Do not start the next task unless asked.
+- Write failing tests first (test names contain the AC ID), then implement. Tests run with `npm test`.
+- Game rules go in pure modules with no DOM or Canvas. Every number lives in src/constants.js with the exact name used in spec.md.
+- Placeholder art only. No frameworks, no bundler, no server.
+- After each task, append one line to docs/trace.md: task | AC covered | commit message.
+- Do not touch files that the task does not need.
