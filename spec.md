@@ -139,7 +139,7 @@ All values `[GAMEPLAY]`.
 
 - `[SOURCE]` direction: large and heavily hunted fish flee from farther away (4–5 m in fished areas versus 2–3 m in reserves), and fish tell a diver carrying a speargun from one without. The **exact numbers are `[GAMEPLAY]`**.
 - While the weapon is raised, flee distance is multiplied by `AIMING_FLEE_MULT = 1.3`. `[GAMEPLAY]` For a large fish this is 7.15 m.
-- Because 5.5 m is close to the base range of 6 m, large fish can only be taken by a slow approach, from behind a rock, or with the range upgrade.
+- Free-swimming large fish (dentex) flee at 5.5 m, or 7.15 m with the weapon raised, which is beyond the base range of 6 m. They are the hard prize: they need the range upgrade and a good shot. Fish that live in crevices (grouper) use a shorter retreat distance (section 4), so the first deep dives are not pointless.
 - Fish inside crevices can only be hit from an angle that has a clear line of sight.
 - The **zone caution** mechanic (fish get warier as you hunt) is **out of scope** (see section 10).
 
@@ -151,10 +151,10 @@ Every fish has three states: **ROAM**, **FLEE** (when the player comes within it
 |---|---|---|---|---|---|
 | Sardine | small | shallow | 5 | School of 15 moving together. One shot catches one fish | 1.4 |
 | White seabream | medium | shallow | 20 | Roams within 3 m of rocks and flees toward the nearest rock | 1.1 |
-| Grouper | large | deep | 80 | Waits at the mouth of a crevice and **retreats inside** when the player is within flee distance. It comes back out if the player stays at least 8 m away for 4 s | 0.8 |
+| Grouper | large | deep | 80 | Waits at the mouth of a crevice and **retreats to the back** when the player comes within `GROUPER_RETREAT_DIST = 3.0` m (3.9 m with the weapon raised). A retreated grouper can still be hit if there is a clear line to it through the mouth. It comes back to the front if the player stays at least 8 m away for 4 s | 0.8 |
 | Dentex | large | deep | 120 | Fast. Circles within 15 m of its home point and approaches when the player is still (speed < 0.3 m/s for 1.5 s) | 1.5 |
 
-*Relative to the player's normal swim speed (1.0). All values `[GAMEPLAY]`. A retreated grouper cannot be hit.
+*Relative to the player's normal swim speed (1.0). All values `[GAMEPLAY]`.
 
 ### 4.1 Hazards
 
@@ -167,7 +167,7 @@ All values `[GAMEPLAY]`.
 
 **Grouper positions `[GAMEPLAY]`:** at the front it sits `GROUPER_FRONT_OFFSET = 0.8` m inside the crevice mouth; when retreated it sits `GROUPER_BACK_OFFSET = 2.4` m inside.
 
-**Hazards are not targets:** jellyfish and moray eels cannot be caught. Arrows pass through them and nothing happens. A retreated grouper cannot be hit either.
+**Hazards are not targets:** jellyfish and moray eels cannot be caught. Arrows pass through them and nothing happens.
 
 If time runs short, cut in this order: dentex first, then moray eel. The game stays complete with four creatures (sardine, seabream, grouper, jellyfish).
 
@@ -202,6 +202,7 @@ The seabed slopes from about 15 m at the left edge to 40 m at the right edge, so
 - **Draw order:** rocks are drawn before the seabed, so the embedded part of a rock is hidden by the ground and the rock looks planted.
 - A crevice is a gap between rocks, 1.2 to 2.5 m wide, closed at the back, with no other exit.
 - `CREVICE_COUNT_DEEP = 8` crevices in the deep zone (provisional; finalize when the map is designed), with mouths at depth ≥ 15 m, spread across the map width.
+- **Crevices differ from each other:** width (between 1.2 and 2.5 m), wall height (2 to 4 stacked circles) and position vary per crevice. These are fixed in the terrain data, not random per dive. Only the hide slots are random per dive.
 - A crevice is built from rock formations: two side walls and a back wall, with the mouth facing open water. `CREVICE_DEPTH = 3.0` m from the mouth to the back wall. The interior must be clear so the diver can swim in up to the back wall. Rocks in crevice walls still obey the grounded-or-stacked rule.
 - Each crevice has a **hide slot** filled at the start of every dive using the seeded RNG:
 
@@ -215,6 +216,7 @@ The seabed slopes from about 15 m at the left edge to 40 m at the right edge, so
 
 - Darkness overlay: 0% at depth 0, 60% at 15 m, 85% at 40 m, linear in between.
 - Only a circle around the diver is clearly visible: `LIGHT_RADIUS = 5` m base, widened by the flashlight upgrade.
+- **Creature visibility (this is what makes searching fun):** outside the light circle, creatures (fish and hazards) are drawn only where darkness is below `CREATURE_HIDE_DARKNESS = 0.5` (depth under 12.5 m). Inside the light circle they are always drawn. Terrain and rocks stay faintly visible so the diver can navigate. Arrows can still hit creatures that are not drawn.
 
 ### 5.4 Parallax depth `[GAMEPLAY]`
 
@@ -421,7 +423,10 @@ Each row must become an automated test (name contains the ID). Tolerances are in
 | AC-4.5 | Sell 1 sardine + 1 grouper | +85 money |
 | AC-4.6 | Shot into a sardine school | exactly one sardine caught |
 | AC-4.7 | Player speed < 0.3 m/s for 1.5 s | dentex moves toward the player |
-| AC-4.8 | Arrow passes through a jellyfish or a moray; arrow aimed at a retreated grouper | no catch in all cases; the arrow continues (or hits the rock behind) |
+| AC-4.8 | Arrow passes through a jellyfish or a moray | no catch; the arrow continues (or hits the rock behind) |
+| AC-4.9 | Grouper at the front, player at 3.5 m, weapon not raised / raised | stays at the front / retreats to the back |
+| AC-4.10 | Retreated grouper, clear line from the player through the crevice mouth, arrow fired | the grouper is hit and caught |
+| AC-4.11 | Retreated grouper, line blocked by a crevice wall, arrow fired | the arrow hits the rock, no catch |
 
 ### 9.5 World
 
@@ -441,6 +446,9 @@ Each row must become an automated test (name contains the ID). Tolerances are in
 | AC-5.9 | Start of a dive | shallow: 15 sardines, 4 seabream, 2 jellyfish; deep: counts follow section 5.5 |
 | AC-5.13 | Two dives with the same seed / two dives with different seeds | identical fish positions and crevice slots / different ones |
 | AC-5.14 | Every crevice in the terrain data | width 1.2 to 2.5 m, depth `CREVICE_DEPTH`, closed back wall, mouth at depth ≥ 15 m, and a clear interior: a circle of radius `DIVER_RADIUS` can travel from the mouth to the back wall |
+| AC-5.15 | Depth 30 m (darkness at least 50%), light radius 5, creature at 6 m / at 4 m from the diver | not drawn / drawn |
+| AC-5.16 | Depth 5 m (darkness under 50%), creature 10 m from the diver | drawn |
+| AC-5.17 | All crevices in the terrain data | at least 3 distinct widths and at least 2 distinct wall heights |
 
 ### 9.6 Controls and movement
 
@@ -528,3 +536,9 @@ Numbers that were not in the original design were added by the coding agent and 
 | `GENERIC_FISH_FLEE_SPEED_MULT` | 1 | T07 | flee speed of the generic test fish |
 | `FISH_DEFAULT_SEED` | 1 | T07 | default seed for tests only; the running game uses a fresh seed per dive |
 | sardine and seabream hit radius | 0.2 m and 0.4 m | T07 | half of the drawn size |
+| `CREVICE_WIDTH` | 1.8 m | T08a | first crevice width (replaced by per-crevice widths in T08c) |
+| `CREVICE_ROCK_RADIUS` | 1.2 m | T08a | radius of the circles that build crevice walls |
+| `CREVICE_START_X_RATIO` | 0.4 | T08a | where along the map width the first crevice is placed |
+| `CREVICE_SIDE_WALL_STACK_OFFSET` | 1.9 m | T08a | derived: vertical offset between stacked wall circles |
+| `MORAY_MARKER_SIZE_PX` | 4 | T08a | size of the placeholder moray marker |
+| `CREVICE_VALIDATION_EPSILON` | 1e-9 | T08a | numeric tolerance of the crevice validator |

@@ -108,6 +108,11 @@ docs/trace.md            task → AC → commit log (for the presentation)
 - Build: 8 crevices built from rock formations, hide slots (60/25/15) filled from the seeded RNG, a fresh seed per dive in the running game (also for the shallow spawn from T07), the grouper with front and retreated positions.
 - Done when: the 1000-dive slot test passes, the crevice validator passes, and the same seed gives the same dive.
 
+**T08c Rework grouper and crevice variety** (est. 1 h) — *added after playtesting T08a*
+- Spec: 3.2, 4, 5.2
+- AC: 4.9, 4.10, 4.11, 5.17 (and 4.2, 5.14 must still pass). **AC-4.8 changed**: the old "retreated grouper cannot be hit" test must be replaced by AC-4.10 and AC-4.11.
+- Build: grouper retreat distance `GROUPER_RETREAT_DIST = 3.0` m (3.9 m with the weapon raised), retreated grouper stays hittable with a clear line, and crevices that differ in width and wall height (fixed data).
+
 **T08b Moray eel** (est. 45 min) — *cut after the dentex if time is short*
 - Spec: 4.1
 - AC: 4.4, 4.8 (moray part)
@@ -118,10 +123,14 @@ docs/trace.md            task → AC → commit log (for the presentation)
 - AC: 4.3, 4.7
 - Build: jellyfish drift and contact effect, dentex circling and approach when the player is still.
 
-**T10 Light, darkness and parallax** (est. 1 h)
-- Spec: 5.3, 5.4
-- AC: 5.4, 5.5, 8.6, 8.7
-- Build: darkness overlay by depth, light circle, low-oxygen edge darkening, three parallax layers.
+**T10a Light, darkness and creature visibility** (est. 1 h) — *never cut: this is what makes searching fun*
+- Spec: 5.3, 8.3 (low-oxygen effect)
+- AC: 5.4, 5.5, 5.15, 5.16, 8.6, 8.7
+- Build: darkness overlay by depth, the light circle, creatures drawn only where the visibility rule allows, low-oxygen edge darkening.
+
+**T10b Parallax** (est. 30 min) — *cut if time is short*
+- Spec: 5.4
+- Build: three parallax layers with placeholder shapes (far 0.2, mid 0.5, near 1.2).
 
 ### Evening: economy, screens, deploy
 
@@ -157,14 +166,18 @@ docs/trace.md            task → AC → commit log (for the presentation)
 - `README.md` with how to play and how to run the tests.
 - Check `docs/trace.md` is complete: it is the evidence for the presentation (spec → tests → code).
 
+## Revised order after the T08a playtest
+
+T10a (darkness and visibility) → T08c (grouper and crevice variety) → T09 (jellyfish and dentex) → T08b (moray) → T11 → T12 → T12b → T13 → T10b (parallax) → T14 → T15 → T16.
+
 ## If time runs short, cut in this order
 
 1. Dentex (T09 part 2), then moray (T08 part 2).
 2. Catch net upgrade (T11 part).
-3. Near parallax layer (T10 part).
+3. Parallax (T10b).
 4. Jellyfish animation polish and hit flashes (T13 part).
 
-Never cut: oxygen, ear pressure, hunting, selling and upgrades, saving, the How to Play screen. They are the game.
+Never cut: oxygen, ear pressure, hunting, light and darkness (T10a), selling and upgrades, saving, the How to Play screen. They are the game.
 
 ## Art track (for the author, parallel to the code)
 
