@@ -48,6 +48,7 @@ test('renderDive draws rocks before seabed so embedded bases are hidden', () => 
       fills.push(currentFill);
     },
     beginPath() {},
+    rect() {},
     moveTo() {},
     lineTo() {},
     closePath() {},

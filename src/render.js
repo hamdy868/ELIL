@@ -15,7 +15,13 @@ import {
   OXYGEN_MAX_BASE,
   PIXELS_PER_METER,
   WORLD_DEPTH,
+  LIGHT_EDGE_STEPS,
+  LIGHT_EDGE_WIDTH,
+  LOW_OXYGEN_THRESHOLD,
+  LOW_OXYGEN_EDGE_WIDTH_PX,
+  LOW_OXYGEN_EDGE_ALPHA_MAX,
 } from './constants.js';
+import { darknessAt, isCreatureVisible, lightRadius } from './lighting.js';
 import {
   getDepthCounterText,
   getDiveResultText,
@@ -167,6 +173,8 @@ export function renderDive(ctx, state) {
   // Placeholder fish, straight-flying arrows, and aiming/reload HUD.
   const hunting = state;
   for (const fish of hunting.fish ?? []) {
+    const distance = Math.hypot(fish.x - diver.x, fish.y - diver.y);
+    if (!isCreatureVisible(diver.y, distance, lightRadius(state.flashlightLevel ?? 0))) continue;
     const sardine = fish.type === 'sardine';
     const fishSize = sardine
       ? SARDINE_DRAW_SIZE_PX
@@ -185,6 +193,8 @@ export function renderDive(ctx, state) {
     ctx.fill();
   }
   for (const marker of state.morayMarkers ?? []) {
+    const distance = Math.hypot(marker.x - diver.x, marker.y - diver.y);
+    if (!isCreatureVisible(diver.y, distance, lightRadius(state.flashlightLevel ?? 0))) continue;
     ctx.fillStyle = '#e9c46a';
     ctx.fillRect(
       Math.round((marker.x - camera.x) * PIXELS_PER_METER) - MORAY_MARKER_SIZE_PX / 2,
@@ -202,6 +212,8 @@ export function renderDive(ctx, state) {
     ctx.lineTo(x + arrow.dx * DIVER_RADIUS * PIXELS_PER_METER, y + arrow.dy * DIVER_RADIUS * PIXELS_PER_METER);
     ctx.stroke();
   }
+  // The mask covers terrain and visible creatures equally; the clear circle keeps the diver lit.
+  drawDarknessMask(ctx, diver, camera, darknessAt(diver.y), lightRadius(state.flashlightLevel ?? 0));
   if (typeof hunting.mouseX === 'number' && typeof hunting.mouseY === 'number') {
     const crossX = Math.round((hunting.mouseX - camera.x) * PIXELS_PER_METER);
     const crossY = Math.round((hunting.mouseY - camera.y) * PIXELS_PER_METER);
@@ -284,6 +296,13 @@ export function renderDive(ctx, state) {
     ctx.restore();
   }
 
+  const oxygenMax = state.oxygenMax ?? OXYGEN_MAX_BASE;
+  const oxygenRatio = oxygenMax > 0 ? Math.max(0, Math.min(1, (state.oxygen ?? oxygenMax) / oxygenMax)) : 1;
+  if (oxygenRatio < LOW_OXYGEN_THRESHOLD) {
+    const intensity = (LOW_OXYGEN_THRESHOLD - oxygenRatio) / LOW_OXYGEN_THRESHOLD;
+    drawDarkEdges(ctx, intensity * LOW_OXYGEN_EDGE_ALPHA_MAX);
+  }
+
   // Depth counter at top right + ear indicator next to it
   const indicatorSize = 8;
   const indicatorX = CANVAS_WIDTH - 48;
@@ -324,4 +343,46 @@ export function renderDive(ctx, state) {
     ctx.font = '8px monospace';
     ctx.fillText('Press Enter for new dive', CANVAS_WIDTH / 2, Math.floor(CANVAS_HEIGHT / 2) + 12);
   }
+}
+
+function drawDarknessMask(ctx, diver, camera, darkness, radiusMeters) {
+  const centerX = Math.round((diver.x - camera.x) * PIXELS_PER_METER);
+  const centerY = Math.round((diver.y - camera.y) * PIXELS_PER_METER);
+  const radius = radiusMeters * PIXELS_PER_METER;
+  const edgeWidth = LIGHT_EDGE_WIDTH * PIXELS_PER_METER;
+
+  ctx.save();
+  ctx.fillStyle = '#000000';
+  ctx.globalAlpha = darkness;
+  beginScreenWithCircularHole(ctx, centerX, centerY, radius + edgeWidth);
+  ctx.fill('evenodd');
+
+  for (let step = 0; step < LIGHT_EDGE_STEPS; step++) {
+    const inner = radius + edgeWidth * step / LIGHT_EDGE_STEPS;
+    const outer = radius + edgeWidth * (step + 1) / LIGHT_EDGE_STEPS;
+    ctx.globalAlpha = darkness * (step + 1) / LIGHT_EDGE_STEPS;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, outer, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, inner, 0, Math.PI * 2, true);
+    ctx.fill('evenodd');
+  }
+  ctx.restore();
+}
+
+function beginScreenWithCircularHole(ctx, centerX, centerY, radius) {
+  ctx.beginPath();
+  ctx.rect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+}
+
+function drawDarkEdges(ctx, alpha) {
+  const edge = LOW_OXYGEN_EDGE_WIDTH_PX;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, CANVAS_WIDTH, edge);
+  ctx.fillRect(0, CANVAS_HEIGHT - edge, CANVAS_WIDTH, edge);
+  ctx.fillRect(0, edge, edge, CANVAS_HEIGHT - edge * 2);
+  ctx.fillRect(CANVAS_WIDTH - edge, edge, edge, CANVAS_HEIGHT - edge * 2);
+  ctx.restore();
 }

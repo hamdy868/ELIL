@@ -66,6 +66,23 @@ export const CAMERA_HEIGHT = CANVAS_HEIGHT / PIXELS_PER_METER;
 export const CAMERA_SMOOTHING = 8.0;
 export const CAMERA_MIN_Y = -2;
 
+// Light and visibility (Spec 5.3)
+export const LIGHT_RADIUS = 5;
+export const LIGHT_RADIUS_LEVEL_1 = 6.5;
+export const LIGHT_RADIUS_LEVEL_2 = 8;
+export const FLASHLIGHT_BASE_LEVEL = 0;
+export const FLASHLIGHT_LEVEL_1 = 1;
+export const FLASHLIGHT_LEVEL_2 = 2;
+export const CREATURE_HIDE_DARKNESS = 0.5;
+export const DARKNESS_AT_SURFACE = 0;
+export const DARKNESS_AT_SHALLOW_DEPTH = 0.6;
+export const DARKNESS_AT_WORLD_DEPTH = 0.85;
+export const LIGHT_EDGE_STEPS = 3;
+export const LIGHT_EDGE_WIDTH = 1;
+export const LOW_OXYGEN_THRESHOLD = 0.2;
+export const LOW_OXYGEN_EDGE_WIDTH_PX = 8;
+export const LOW_OXYGEN_EDGE_ALPHA_MAX = 1;
+
 // Oxygen (Spec 1, 1.1)
 export const OXYGEN_MAX_BASE = 100;
 export const MOVE_IDLE = 0.7;

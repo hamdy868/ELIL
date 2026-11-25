@@ -7,3 +7,4 @@ T05 | AC-2.1 to 2.11, 6.5, 8.3 to 8.5 | Ear pressure, E key, HUD
 T06 | AC-3.1 to 3.6 | Hunting: hold-to-raise firing, reload, straight arrows, rock and range collision, dummy fish and HUD
 T07 | AC-3.7 to 3.11, AC-4.1, AC-4.6 | Fish: generic flee states, sardine school, seabream near rocks, seeded shallow spawns, fish rendering
 T08a | AC-4.2, AC-4.8 (retreated grouper), AC-5.7, AC-5.9 (deep groupers only), AC-5.13, AC-5.14 | Crevices, seeded hide slots, grouper retreat/emergence, moray markers, and terrain validator
+T10a | AC-5.4, AC-5.5, AC-5.15, AC-5.16, AC-8.6, AC-8.7 | Light, darkness, creature visibility, and low-oxygen edge darkening
