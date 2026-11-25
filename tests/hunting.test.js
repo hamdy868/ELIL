@@ -8,7 +8,8 @@ import {
   SPEAR_RANGE,
 } from '../src/constants.js';
 import { createHuntingState, stepHunting } from '../src/hunting.js';
-import { createFish, createGrouper, createSardineSchool, stepFish } from '../src/fish.js';
+import { createFish, createGrouper, createSardineSchool } from '../src/fish.js';
+import { createTerrain } from '../src/world.js';
 
 function stateWith(overrides = {}) {
   return {
@@ -131,20 +132,62 @@ test('AC-4.6: shooting a sardine school catches exactly one sardine', () => {
   assert.equal(result.fish.length, 14);
 });
 
-test('AC-4.8: arrow aimed at a retreated grouper passes through without catching it', () => {
-  const crevice = { id: 0, mouth: { x: 0, y: 10 } };
-  const grouper = stepFish(createGrouper(crevice), { player: { x: 0, y: 9 }, dt: FIXED_DT });
-  assert.equal(grouper.retreated, true);
-  const state = stateWith({
-    diver: { x: -3, y: grouper.y, radius: 0.4 },
+test('AC-4.8: arrows pass through jellyfish and morays without catching them', () => {
+  const hazards = [
+    createFish({ id: 'jellyfish-target', type: 'jellyfish', x: 2, y: 10 }),
+    createFish({ id: 'moray-target', type: 'moray', x: 4, y: 10 }),
+  ];
+  const result = runShotOnFish(hazards, 6);
+  assert.equal(result.fishCarried, 0);
+  assert.deepEqual(result.fish.map((fish) => fish.type), ['jellyfish', 'moray']);
+});
+
+test('AC-4.10: a clear arrow line through the crevice mouth hits a retreated grouper', () => {
+  const terrain = createTerrain();
+  const crevice = terrain.crevices[0];
+  const grouper = {
+    ...createGrouper(crevice),
+    x: crevice.back.x,
+    y: crevice.back.y - 0.6,
+    retreated: true,
+    state: 'FLEE',
+  };
+  const targetY = grouper.y;
+  let state = stateWith({
+    diver: { x: crevice.mouth.x, y: crevice.mouth.y - 3, radius: 0.4 },
+    terrain,
     fish: [grouper],
   });
-  let next = stepHunting(state, { fireHeld: true, mouseX: 10, mouseY: grouper.y }, FIXED_DT);
-  next = stepHunting(next, { fireHeld: false, mouseX: 10, mouseY: grouper.y }, FIXED_DT);
-  for (let i = 0; i < 12; i++) {
-    next = stepHunting(next, { fireHeld: false, mouseX: 10, mouseY: grouper.y }, FIXED_DT);
+  state = stepHunting(state, { fireHeld: true, mouseX: crevice.mouth.x, mouseY: targetY }, FIXED_DT);
+  state = stepHunting(state, { fireHeld: false, mouseX: crevice.mouth.x, mouseY: targetY }, FIXED_DT);
+  for (let i = 0; i < 24 && state.arrows.length; i++) {
+    state = stepHunting(state, { fireHeld: false, mouseX: crevice.mouth.x, mouseY: targetY }, FIXED_DT);
   }
-  assert.equal(next.fishCarried, 0);
-  assert.equal(next.fish.length, 1);
-  assert.ok(next.arrows.length > 0);
+  assert.equal(state.fishCarried, 1);
+  assert.equal(state.fish.length, 0);
+});
+
+test('AC-4.11: a crevice wall blocks an arrow line to the retreated grouper', () => {
+  const terrain = createTerrain();
+  const crevice = terrain.crevices[0];
+  const grouper = {
+    ...createGrouper(crevice),
+    x: crevice.back.x,
+    y: crevice.back.y - 0.6,
+    retreated: true,
+    state: 'FLEE',
+  };
+  let state = stateWith({
+    diver: { x: crevice.mouth.x - 6, y: grouper.y, radius: 0.4 },
+    terrain,
+    fish: [grouper],
+  });
+  state = stepHunting(state, { fireHeld: true, mouseX: crevice.mouth.x, mouseY: grouper.y }, FIXED_DT);
+  state = stepHunting(state, { fireHeld: false, mouseX: crevice.mouth.x, mouseY: grouper.y }, FIXED_DT);
+  for (let i = 0; i < 24 && state.arrows.length; i++) {
+    state = stepHunting(state, { fireHeld: false, mouseX: crevice.mouth.x, mouseY: grouper.y }, FIXED_DT);
+  }
+  assert.equal(state.fishCarried, 0);
+  assert.equal(state.fish.length, 1);
+  assert.equal(state.arrows.length, 0);
 });

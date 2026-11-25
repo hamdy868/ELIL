@@ -115,13 +115,22 @@ export const CREVICE_COUNT_DEEP = 8;
 export const CREVICE_DEPTH = 3.0;
 export const CREVICE_MIN_WIDTH = 1.2;
 export const CREVICE_MAX_WIDTH = 2.5;
-export const CREVICE_WIDTH = 1.8;
+export const CREVICE_LAYOUTS = [
+  { x: 48, width: 1.2, wallHeight: 2 },
+  { x: 55.5, width: 1.4, wallHeight: 3 },
+  { x: 66, width: 1.6, wallHeight: 4 },
+  { x: 75, width: 1.8, wallHeight: 2 },
+  { x: 84, width: 2.0, wallHeight: 3 },
+  { x: 93, width: 2.2, wallHeight: 4 },
+  { x: 102, width: 2.4, wallHeight: 2 },
+  { x: 111, width: 2.5, wallHeight: 4 },
+];
 export const CREVICE_ROCK_RADIUS = 1.2;
-export const CREVICE_START_X_RATIO = 0.4;
 export const GROUPER_SLOT_PROBABILITY = 0.6;
 export const MORAY_SLOT_PROBABILITY = 0.25;
 export const GROUPER_FRONT_OFFSET = 0.8;
 export const GROUPER_BACK_OFFSET = 2.4;
+export const GROUPER_RETREAT_DIST = 3.0;
 export const GROUPER_EMERGE_DISTANCE = 8;
 export const GROUPER_EMERGE_TIME = 4;
 export const GROUPER_FLEE_SPEED_MULT = 0.8;

@@ -43,7 +43,7 @@ function advanceArrow(arrow, state, dt) {
     if (t !== null && (!firstHit || t < firstHit.t)) firstHit = { type: 'rock', t };
   }
   for (const fish of state.fish ?? []) {
-    if (fish.type === 'grouper' && fish.retreated) continue;
+    if (fish.type === 'jellyfish' || fish.type === 'moray') continue;
     const t = segmentCircleTime(arrow.x, arrow.y, endX, endY, fish);
     if (t !== null && (!firstHit || t < firstHit.t)) {
       firstHit = { type: 'fish', t, fishId: fish.id };

@@ -52,6 +52,28 @@ test('AC-4.1: a fish returns to ROAM after 3 s outside flee distance', () => {
   assert.equal(returned.state, 'ROAM');
 });
 
+test('AC-4.9: grouper retreats at 3 m, or 3.9 m with the weapon raised', () => {
+  const crevice = createTerrain().crevices[0];
+  const grouper = createFish({ type: 'grouper', id: `grouper-${crevice.id}`, x: crevice.mouth.x,
+    y: crevice.mouth.y + 0.8, fleeSpeed: 0.8 });
+  const fixedGrouper = {
+    ...grouper,
+    value: 80,
+    creviceId: crevice.id,
+    frontX: crevice.mouth.x,
+    frontY: crevice.mouth.y + 0.8,
+    backX: crevice.mouth.x,
+    backY: crevice.mouth.y + 2.4,
+    retreated: false,
+  };
+  const playerAtThreePointFive = { x: fixedGrouper.frontX + 3.5, y: fixedGrouper.frontY };
+  assert.equal(stepFish(fixedGrouper, { player: playerAtThreePointFive, weaponRaised: false, dt: 0 }).retreated, false);
+  assert.equal(stepFish(fixedGrouper, { player: playerAtThreePointFive, weaponRaised: true, dt: 0 }).retreated, true);
+  assert.equal(stepFish(fixedGrouper, {
+    player: { x: fixedGrouper.frontX + 4, y: fixedGrouper.frontY }, weaponRaised: true, dt: 0,
+  }).retreated, false);
+});
+
 test('AC-4.6: sardine school moves and flees together; shallow spawns are seeded and above seabed', () => {
   const school = createSardineSchool({ x: 0, y: 10 });
   assert.equal(SARDINE_SCHOOL_SIZE, 15);

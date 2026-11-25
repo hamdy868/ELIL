@@ -8,8 +8,8 @@ import {
   GROUPER_EMERGE_TIME,
   GROUPER_FRONT_OFFSET,
   GROUPER_FLEE_SPEED_MULT,
+  GROUPER_RETREAT_DIST,
   GROUPER_VALUE,
-  FLEE_DIST_LARGE,
   SPEED_NORMAL,
 } from '../src/constants.js';
 import { createGameState } from '../src/game.js';
@@ -30,7 +30,7 @@ test('AC-4.2: grouper retreats inside its crevice and emerges after 4 s at least
   assert.equal(grouper.y, crevice.mouth.y + GROUPER_FRONT_OFFSET);
 
   const retreated = createGrouper(crevice);
-  const close = { x: crevice.mouth.x + FLEE_DIST_LARGE, y: grouper.y };
+  const close = { x: crevice.mouth.x + GROUPER_RETREAT_DIST, y: grouper.y };
   const atBack = stepFish(retreated, { player: close, dt: 0 });
   assert.equal(atBack.retreated, true);
   assert.equal(atBack.y, crevice.mouth.y + GROUPER_BACK_OFFSET);
@@ -102,4 +102,13 @@ test('AC-5.14: every crevice has a valid open mouth, closed back, and clear dive
   invalid.crevices[1].mouth.y = 10;
   invalid.crevices[2].backWall = null;
   assert.equal(validateCrevices(invalid).valid, false);
+});
+
+test('AC-5.17: fixed crevice data varies width, wall height, and position', () => {
+  const crevices = createTerrain().crevices;
+  assert.ok(new Set(crevices.map((crevice) => crevice.width)).size >= 3);
+  assert.ok(new Set(crevices.map((crevice) => crevice.wallHeight)).size >= 2);
+  assert.ok(new Set(crevices.map((crevice) => crevice.mouth.x)).size >= 2);
+  assert.ok(crevices.every((crevice) => crevice.width >= 1.2 && crevice.width <= 2.5));
+  assert.ok(crevices.every((crevice) => crevice.wallHeight >= 2 && crevice.wallHeight <= 4));
 });

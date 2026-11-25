@@ -12,6 +12,7 @@ import {
   GROUPER_EMERGE_TIME,
   GROUPER_FLEE_SPEED_MULT,
   GROUPER_FRONT_OFFSET,
+  GROUPER_RETREAT_DIST,
   GROUPER_VALUE,
   RETURN_TO_ROAM_DELAY,
   SARDINE_FLEE_SPEED_MULT,
@@ -219,7 +220,10 @@ export function stepFish(fish, context = {}) {
     const player = context.player ?? { x: 0, y: 0 };
     const dt = context.dt ?? 0;
     if (!fish.retreated) {
-      if (distanceBetween(fish, player) <= fleeDistance(fish, context.weaponRaised)) {
+      const retreatDistance = context.weaponRaised
+        ? GROUPER_RETREAT_DIST * AIMING_FLEE_MULT
+        : GROUPER_RETREAT_DIST;
+      if (distanceBetween(fish, player) <= retreatDistance) {
         return {
           ...fish,
           state: FLEE,

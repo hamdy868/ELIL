@@ -1,13 +1,12 @@
 import {
   CREVICE_COUNT_DEEP,
   CREVICE_DEPTH,
+  CREVICE_LAYOUTS,
   CREVICE_MAX_WIDTH,
   CREVICE_MIN_WIDTH,
   CREVICE_ROCK_RADIUS,
-  CREVICE_START_X_RATIO,
   CREVICE_SIDE_WALL_STACK_OFFSET,
   CREVICE_VALIDATION_EPSILON,
-  CREVICE_WIDTH,
   GROUPER_SLOT_PROBABILITY,
   MORAY_SLOT_PROBABILITY,
   ROCK_EMBED_FRACTION,
@@ -102,16 +101,14 @@ function createGroundedRock(terrain, x, radius, formationId, creviceId, wall) {
 
 function buildCrevices(seabed) {
   const terrainRef = { seabed };
-  const startX = WORLD_WIDTH * CREVICE_START_X_RATIO;
-  const endX = WORLD_WIDTH - 2 * CREVICE_ROCK_RADIUS - CREVICE_WIDTH / 2;
-  const spacing = (endX - startX) / (CREVICE_COUNT_DEEP - 1);
   const rockSets = [];
   const crevices = [];
 
   for (let id = 0; id < CREVICE_COUNT_DEEP; id++) {
-    const x = startX + spacing * id;
+    const layout = CREVICE_LAYOUTS[id];
+    const { x, width, wallHeight } = layout;
     const radius = CREVICE_ROCK_RADIUS;
-    const halfGap = radius + CREVICE_WIDTH / 2;
+    const halfGap = radius + width / 2;
     const baseFormationId = ROCK_FORMATIONS.length + id * 3;
     const left = [];
     const right = [];
@@ -122,17 +119,15 @@ function buildCrevices(seabed) {
     ]) {
       const base = createGroundedRock(terrainRef, x + offset, radius, formationId, id, wall);
       destination.push(base);
-      const firstStack = {
-        ...base,
-        y: base.y - CREVICE_SIDE_WALL_STACK_OFFSET,
-        wall: `${wall}-upper`,
-      };
-      const secondStack = {
-        ...firstStack,
-        y: firstStack.y - CREVICE_SIDE_WALL_STACK_OFFSET,
-        wall: `${wall}-top`,
-      };
-      destination.push(firstStack, secondStack);
+      let previous = base;
+      for (let level = 1; level < wallHeight; level++) {
+        previous = {
+          ...previous,
+          y: previous.y - CREVICE_SIDE_WALL_STACK_OFFSET,
+          wall: `${wall}-stack-${level}`,
+        };
+        destination.push(previous);
+      }
     }
 
     const backWall = createGroundedRock(terrainRef, x, radius, baseFormationId + 2, id, 'back');
@@ -147,7 +142,8 @@ function buildCrevices(seabed) {
     rockSets.push(...left, ...right, backWall);
     crevices.push({
       id,
-      width: CREVICE_WIDTH,
+      width,
+      wallHeight,
       depth: CREVICE_DEPTH,
       mouth,
       back,
