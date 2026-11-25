@@ -12,6 +12,7 @@ import {
   WORLD_WIDTH,
 } from '../src/constants.js';
 import { createDiveState, step } from '../src/physics.js';
+import { createTerrain, getSeabedDepth } from '../src/world.js';
 
 function runSteps(initialState, inputOrFn, seconds) {
   let state = initialState;
@@ -101,16 +102,91 @@ test('AC-6.7: mouse to the left of the diver makes diver face left', () => {
   assert.equal(facingRight.diver.facing, 'right');
 });
 
-test('AC-5.3: trying to go below the 40 m seabed is rejected', () => {
+test('AC-5.3: trying to go below the sloped seabed is rejected and diver slides along slope', () => {
+  const terrain = createTerrain();
+  const startX = 30;
+  const seabedY = getSeabedDepth(terrain, startX);
   let state = createDiveState({
-    diver: { x: 60, y: WORLD_DEPTH - DIVER_RADIUS, vx: 0, vy: 0 },
+    terrain,
+    diver: { x: startX, y: seabedY - DIVER_RADIUS, vx: 0, vy: 0 },
   });
   state = runSteps(state, { down: true, fast: true }, 1.0);
+
+  const seabedAtFinalX = getSeabedDepth(terrain, state.diver.x);
   assert.ok(
-    state.diver.y + DIVER_RADIUS <= WORLD_DEPTH + 1e-9,
-    `diver penetrated seabed: y=${state.diver.y}, radius=${DIVER_RADIUS}`
+    state.diver.y + DIVER_RADIUS <= seabedAtFinalX + 1e-6,
+    `diver penetrated sloped seabed: y=${state.diver.y}, radius=${DIVER_RADIUS}, seabed=${seabedAtFinalX}`
   );
-  assert.equal(state.diver.vy, 0);
+  assert.ok(state.diver.x > startX, 'expected diver to slide downhill along the sloped seabed');
+});
+
+test('AC-5.1: swimming into a rock slides along it with no penetration and no rebound', () => {
+  const rock = { x: 50, y: 10, radius: 2.0 };
+  const terrain = {
+    seabed: [
+      { x: 0, y: 15 },
+      { x: WORLD_WIDTH, y: 40 },
+    ],
+    rocks: [rock],
+  };
+
+  // Approach diagonally (right and down) onto the upper-left side of the rock
+  let state = createDiveState({
+    terrain,
+    diver: { x: 47.0, y: 8.8, vx: 2.0, vy: 0.5 },
+  });
+
+  for (let i = 0; i < 60; i++) {
+    state = step(state, { right: true }, FIXED_DT);
+    const dist = Math.hypot(state.diver.x - rock.x, state.diver.y - rock.y);
+    assert.ok(
+      dist >= DIVER_RADIUS + rock.radius - 1e-6,
+      `penetrated rock at step ${i}: dist=${dist}`
+    );
+  }
+
+  // Diver should have slid along the rock surface upward/tangentially rather than bouncing backward
+  assert.ok(state.diver.y < 8.8, 'expected diver to slide tangentially along the curved rock');
+
+  // Direct head-on collision has zero rebound (normal velocity is 0, not negative/away)
+  let headOn = createDiveState({
+    terrain,
+    diver: { x: 47.5, y: 10, vx: 2.0, vy: 0 },
+  });
+  headOn = runSteps(headOn, { right: true }, 0.5);
+  assert.ok(Math.abs(headOn.diver.vx) < 1e-6, `expected no rebound vx, got ${headOn.diver.vx}`);
+  assert.ok(Math.abs(headOn.diver.vy) < 1e-6);
+
+  const afterRelease = step(headOn, {}, FIXED_DT);
+  assert.ok(afterRelease.diver.vx <= 1e-6 && afterRelease.diver.vx >= -1e-6, 'no rebound after stopping against rock');
+});
+
+test('diver cannot tunnel through a rock at SPEED_FAST', () => {
+  const thinRock = { x: 50, y: 10, radius: 0.5 };
+  const terrain = {
+    seabed: [
+      { x: 0, y: 15 },
+      { x: WORLD_WIDTH, y: 40 },
+    ],
+    rocks: [thinRock],
+  };
+
+  // Start to the left of the thin rock moving at SPEED_FAST
+  let state = createDiveState({
+    terrain,
+    diver: { x: 48.0, y: 10, vx: SPEED_FAST, vy: 0 },
+  });
+
+  // Test both fine fixed steps and a large dt step
+  state = runSteps(state, { right: true, fast: true }, 1.0);
+  assert.ok(state.diver.x < thinRock.x, `tunneled through rock at FIXED_DT: x=${state.diver.x}`);
+
+  let largeDtState = createDiveState({
+    terrain,
+    diver: { x: 48.5, y: 10, vx: SPEED_FAST, vy: 0 },
+  });
+  largeDtState = step(largeDtState, { right: true, fast: true }, 0.5);
+  assert.ok(largeDtState.diver.x < thinRock.x, `tunneled through rock at large dt: x=${largeDtState.diver.x}`);
 });
 
 test('surface bound, side bounds, camera smoothing (30 m wide window), and purity', () => {

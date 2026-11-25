@@ -6,6 +6,8 @@ import {
   CAMERA_MIN_Y,
   CAMERA_SMOOTHING,
   CAMERA_WIDTH,
+  COLLISION_ITERATIONS,
+  COLLISION_MAX_STEP_DIST,
   DECEL_RATE,
   DIVER_MAX_TILT_RAD,
   DIVER_RADIUS,
@@ -17,6 +19,7 @@ import {
   WORLD_DEPTH,
   WORLD_WIDTH,
 } from './constants.js';
+import { createTerrain, zoneAt } from './world.js';
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -29,11 +32,93 @@ function computeCameraTarget(diver) {
   };
 }
 
+function removeInwardVelocity(vx, vy, nx, ny) {
+  const vn = vx * nx + vy * ny;
+  if (vn < 0) {
+    return {
+      vx: vx - vn * nx,
+      vy: vy - vn * ny,
+    };
+  }
+  return { vx, vy };
+}
+
+function resolveRockCollisions(pos, vel, radius, rocks) {
+  let { x, y } = pos;
+  let { vx, vy } = vel;
+
+  for (const rock of rocks) {
+    const dx = x - rock.x;
+    const dy = y - rock.y;
+    const dist = Math.hypot(dx, dy);
+    const minDist = radius + rock.radius;
+
+    if (dist < minDist) {
+      const nx = dist > 1e-8 ? dx / dist : 0;
+      const ny = dist > 1e-8 ? dy / dist : -1;
+      x = rock.x + nx * minDist;
+      y = rock.y + ny * minDist;
+      ({ vx, vy } = removeInwardVelocity(vx, vy, nx, ny));
+    }
+  }
+
+  return { x, y, vx, vy };
+}
+
+function resolveSeabedCollisions(pos, vel, radius, seabed) {
+  let { x, y } = pos;
+  let { vx, vy } = vel;
+
+  for (let i = 0; i < seabed.length - 1; i++) {
+    const a = seabed[i];
+    const b = seabed[i + 1];
+    const sx = b.x - a.x;
+    const sy = b.y - a.y;
+    const segLenSq = sx * sx + sy * sy;
+    if (segLenSq <= 0) continue;
+
+    const segLen = Math.sqrt(segLenSq);
+    const segNx = sy / segLen;
+    const segNy = -sx / segLen;
+
+    const t = clamp(((x - a.x) * sx + (y - a.y) * sy) / segLenSq, 0, 1);
+    const cx = a.x + t * sx;
+    const cy = a.y + t * sy;
+
+    const withinX = x >= a.x && x <= b.x;
+    const segYAtX = withinX ? a.y + ((x - a.x) / sx) * sy : Infinity;
+
+    if (withinX && y > segYAtX) {
+      const signedDist = (x - a.x) * segNx + (y - a.y) * segNy;
+      const push = radius - signedDist;
+      x += segNx * push;
+      y += segNy * push;
+      ({ vx, vy } = removeInwardVelocity(vx, vy, segNx, segNy));
+      continue;
+    }
+
+    const dx = x - cx;
+    const dy = y - cy;
+    const dist = Math.hypot(dx, dy);
+    if (dist < radius) {
+      const nx = dist > 1e-8 ? dx / dist : segNx;
+      const ny = dist > 1e-8 ? dy / dist : segNy;
+      x = cx + nx * radius;
+      y = cy + ny * radius;
+      ({ vx, vy } = removeInwardVelocity(vx, vy, nx, ny));
+    }
+  }
+
+  return { x, y, vx, vy };
+}
+
 /**
  * Create initial dive state at the boat, depth 0, with dive-start velocity.
  * @param {object} [overrides]
  */
 export function createDiveState(overrides = {}) {
+  const terrain = overrides.terrain ?? createTerrain();
+
   const diver = {
     x: BOAT_X,
     y: 0,
@@ -55,22 +140,26 @@ export function createDiveState(overrides = {}) {
 
   return {
     fishCarried: 0,
-    seabedDepth: WORLD_DEPTH,
+    zone: zoneAt(diver.y),
     ...overrides,
+    terrain,
     diver,
     camera,
   };
 }
 
 /**
- * Advance diver physics and smoothed camera by dt seconds. Pure function.
+ * Advance diver physics, terrain/rock sliding collision, and smoothed camera by dt seconds.
+ * Pure function.
  * @param {object} state
  * @param {object} [input]
  * @param {number} [dt=FIXED_DT]
  */
 export function step(state, input = {}, dt = FIXED_DT) {
   const { diver, camera } = state;
-  const seabedDepth = state.seabedDepth ?? WORLD_DEPTH;
+  const terrain = state.terrain ?? createTerrain();
+  const seabed = terrain.seabed;
+  const rocks = terrain.rocks;
 
   let dirX = (input.right ? 1 : 0) - (input.left ? 1 : 0);
   let dirY = (input.down ? 1 : 0) - (input.up ? 1 : 0);
@@ -105,28 +194,35 @@ export function step(state, input = {}, dt = FIXED_DT) {
     vy *= decay;
   }
 
-  let x = diver.x + vx * dt;
-  let y = diver.y + vy * dt;
-
+  let { x, y } = diver;
   const minX = diver.radius;
   const maxX = WORLD_WIDTH - diver.radius;
-  if (x < minX) {
-    x = minX;
-    if (vx < 0) vx = 0;
-  } else if (x > maxX) {
-    x = maxX;
-    if (vx > 0) vx = 0;
-  }
 
-  if (y < 0) {
-    y = 0;
-    if (vy < 0) vy = 0;
-  }
+  const moveDist = Math.hypot(vx, vy) * dt;
+  const substeps = Math.max(1, Math.ceil(moveDist / COLLISION_MAX_STEP_DIST));
+  const subDt = dt / substeps;
 
-  const maxY = seabedDepth - diver.radius;
-  if (y > maxY) {
-    y = maxY;
-    if (vy > 0) vy = 0;
+  for (let s = 0; s < substeps; s++) {
+    x += vx * subDt;
+    y += vy * subDt;
+
+    for (let iter = 0; iter < COLLISION_ITERATIONS; iter++) {
+      if (x < minX) {
+        x = minX;
+        if (vx < 0) vx = 0;
+      } else if (x > maxX) {
+        x = maxX;
+        if (vx > 0) vx = 0;
+      }
+
+      if (y < 0) {
+        y = 0;
+        if (vy < 0) vy = 0;
+      }
+
+      ({ x, y, vx, vy } = resolveRockCollisions({ x, y }, { vx, vy }, diver.radius, rocks));
+      ({ x, y, vx, vy } = resolveSeabedCollisions({ x, y }, { vx, vy }, diver.radius, seabed));
+    }
   }
 
   let facing = diver.facing;
@@ -167,6 +263,7 @@ export function step(state, input = {}, dt = FIXED_DT) {
 
   return {
     ...state,
+    zone: zoneAt(nextDiver.y),
     diver: nextDiver,
     camera: nextCamera,
   };

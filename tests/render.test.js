@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../src/constants.js';
-import { computeCanvasLayout } from '../src/render.js';
+import { computeCanvasLayout, renderDive } from '../src/render.js';
+import { createDiveState } from '../src/physics.js';
 
 test('AC-8.11: resize keeps crisp integer scale with letterboxing', () => {
   assert.equal(CANVAS_WIDTH, 384);
@@ -30,4 +31,44 @@ test('AC-8.11: resize keeps crisp integer scale with letterboxing', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(html, /image-rendering:\s*pixelated/i);
   assert.match(html, /<canvas\b/i);
+});
+
+test('renderDive draws rocks before seabed so embedded bases are hidden', () => {
+  const fills = [];
+  let currentFill = '';
+  const ctx = {
+    imageSmoothingEnabled: true,
+    set fillStyle(val) {
+      currentFill = val;
+    },
+    get fillStyle() {
+      return currentFill;
+    },
+    fillRect() {
+      fills.push(currentFill);
+    },
+    beginPath() {},
+    moveTo() {},
+    lineTo() {},
+    closePath() {},
+    arc() {},
+    fill() {
+      fills.push(currentFill);
+    },
+    save() {},
+    translate() {},
+    rotate() {},
+    restore() {},
+  };
+
+  const state = createDiveState({
+    camera: { x: 0, y: 5 },
+  });
+  renderDive(ctx, state);
+
+  const rockIndex = fills.indexOf('#5c5852');
+  const seabedIndex = fills.indexOf('#3b2f22');
+  assert.ok(rockIndex !== -1, 'expected rocks to be drawn');
+  assert.ok(seabedIndex !== -1, 'expected seabed to be drawn');
+  assert.ok(rockIndex < seabedIndex, 'expected rocks to be drawn before seabed');
 });

@@ -51,13 +51,12 @@ export function renderPlaceholder(ctx) {
 }
 
 /**
- * Draw the dive scene using placeholder geometry (circle diver, flat seabed, boat).
+ * Draw the dive scene using placeholder geometry (sloped seabed, rocks, boat, circle diver).
  * @param {CanvasRenderingContext2D} ctx
  * @param {object} state
  */
 export function renderDive(ctx, state) {
-  const { diver, camera } = state;
-  const seabedDepth = state.seabedDepth ?? WORLD_DEPTH;
+  const { diver, camera, terrain } = state;
 
   ctx.imageSmoothingEnabled = false;
 
@@ -72,19 +71,58 @@ export function renderDive(ctx, state) {
     ctx.fillRect(0, 0, CANVAS_WIDTH, Math.min(CANVAS_HEIGHT, surfaceScreenY));
   }
 
+  // Rocks as placeholder circles (drawn before seabed so embedded bottoms are hidden)
+  if (terrain?.rocks?.length) {
+    ctx.fillStyle = '#5c5852';
+    for (const rock of terrain.rocks) {
+      const rx = Math.round((rock.x - camera.x) * PIXELS_PER_METER);
+      const ry = Math.round((rock.y - camera.y) * PIXELS_PER_METER);
+      const rr = Math.max(1, Math.round(rock.radius * PIXELS_PER_METER));
+      if (rx + rr < 0 || rx - rr > CANVAS_WIDTH || ry + rr < 0 || ry - rr > CANVAS_HEIGHT) {
+        continue;
+      }
+      ctx.beginPath();
+      ctx.arc(rx, ry, rr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Sloped seabed placeholder polygon (drawn after rocks to hide embedded bases)
+  if (terrain?.seabed?.length) {
+    ctx.fillStyle = '#3b2f22';
+    ctx.beginPath();
+    const first = terrain.seabed[0];
+    ctx.moveTo(
+      Math.round((first.x - camera.x) * PIXELS_PER_METER),
+      Math.round((first.y - camera.y) * PIXELS_PER_METER)
+    );
+    for (let i = 1; i < terrain.seabed.length; i++) {
+      const pt = terrain.seabed[i];
+      ctx.lineTo(
+        Math.round((pt.x - camera.x) * PIXELS_PER_METER),
+        Math.round((pt.y - camera.y) * PIXELS_PER_METER)
+      );
+    }
+    const last = terrain.seabed[terrain.seabed.length - 1];
+    ctx.lineTo(Math.round((last.x - camera.x) * PIXELS_PER_METER), CANVAS_HEIGHT);
+    ctx.lineTo(Math.round((first.x - camera.x) * PIXELS_PER_METER), CANVAS_HEIGHT);
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    const seabedDepth = state.seabedDepth ?? WORLD_DEPTH;
+    const seabedScreenY = Math.round((seabedDepth - camera.y) * PIXELS_PER_METER);
+    if (seabedScreenY < CANVAS_HEIGHT) {
+      ctx.fillStyle = '#3b2f22';
+      const top = Math.max(0, seabedScreenY);
+      ctx.fillRect(0, top, CANVAS_WIDTH, CANVAS_HEIGHT - top);
+    }
+  }
+
   // Boat placeholder at surface, x = BOAT_X
   const boatScreenX = Math.round((BOAT_X - camera.x) * PIXELS_PER_METER);
   if (surfaceScreenY >= -20 && surfaceScreenY <= CANVAS_HEIGHT + 20) {
     ctx.fillStyle = '#8b5a2b';
     ctx.fillRect(boatScreenX - 24, surfaceScreenY - 8, 48, 8);
-  }
-
-  // Flat seabed placeholder
-  const seabedScreenY = Math.round((seabedDepth - camera.y) * PIXELS_PER_METER);
-  if (seabedScreenY < CANVAS_HEIGHT) {
-    ctx.fillStyle = '#3b2f22';
-    const top = Math.max(0, seabedScreenY);
-    ctx.fillRect(0, top, CANVAS_WIDTH, CANVAS_HEIGHT - top);
   }
 
   // Diver as placeholder circle with facing & tilt indicator
