@@ -37,7 +37,7 @@ A diver spearfishes among rocks at increasing depths. Every second drains breath
 - Game rules (oxygen, ear pressure, hunting, economy, fish behavior) live in **pure modules with no DOM or Canvas access**, so they can be unit-tested in Node (`node --test`) without a browser.
 - All tunable numbers live in one `constants.js`, named exactly as in this spec (for example `OXYGEN_MAX_BASE`).
 - The simulation uses a fixed timestep (1/60 s) so that tests are deterministic.
-- Randomness goes through an injectable seeded RNG so tests can control it.
+- Randomness goes through an injectable seeded RNG so tests can control it. The same seed must always produce the same dive. **In the running game each dive uses a fresh seed (for example `Date.now()`)**, so fish positions and crevice slots differ between dives; tests inject fixed seeds.
 - Write the tests from the acceptance criteria in section 9 **before** implementing each system. Test names must contain the criterion ID (for example `AC-1.5`).
 - Placeholder art first: colored rectangles and circles. Final sprites replace them without changing logic.
 
@@ -165,6 +165,10 @@ Every fish has three states: **ROAM**, **FLEE** (when the player comes within it
 
 All values `[GAMEPLAY]`.
 
+**Grouper positions `[GAMEPLAY]`:** at the front it sits `GROUPER_FRONT_OFFSET = 0.8` m inside the crevice mouth; when retreated it sits `GROUPER_BACK_OFFSET = 2.4` m inside.
+
+**Hazards are not targets:** jellyfish and moray eels cannot be caught. Arrows pass through them and nothing happens. A retreated grouper cannot be hit either.
+
 If time runs short, cut in this order: dentex first, then moray eel. The game stays complete with four creatures (sardine, seabream, grouper, jellyfish).
 
 > Species are well-known Mediterranean fish, but their abundance near Zuwara has **not been verified**. Verify before claiming it in the presentation.
@@ -197,7 +201,8 @@ The seabed slopes from about 15 m at the left edge to 40 m at the right edge, so
 - Rocks are grouped into **formations**: mounds of 1 to 4 overlapping circles. Collision uses the circles. The drawn look will be replaced by pixel art later.
 - **Draw order:** rocks are drawn before the seabed, so the embedded part of a rock is hidden by the ground and the rock looks planted.
 - A crevice is a gap between rocks, 1.2 to 2.5 m wide, closed at the back, with no other exit.
-- `CREVICE_COUNT_DEEP = 8` crevices in the deep zone (provisional; finalize when the map is designed).
+- `CREVICE_COUNT_DEEP = 8` crevices in the deep zone (provisional; finalize when the map is designed), with mouths at depth ≥ 15 m, spread across the map width.
+- A crevice is built from rock formations: two side walls and a back wall, with the mouth facing open water. `CREVICE_DEPTH = 3.0` m from the mouth to the back wall. The interior must be clear so the diver can swim in up to the back wall. Rocks in crevice walls still obey the grounded-or-stacked rule.
 - Each crevice has a **hide slot** filled at the start of every dive using the seeded RNG:
 
 | Slot content | Probability |
@@ -221,6 +226,8 @@ Three background layers with relative scroll speeds: far 0.2 (ruins and haze), m
 |---|---|
 | Shallow | sardine school of 15, 4 seabream, 2 jellyfish |
 | Deep | one grouper per crevice whose slot is grouper, 2 dentex, one moray per crevice whose slot is moray, 1 jellyfish |
+
+Shallow fish spawn between depth 2 m and 13 m, in open water above the seabed. Seabream spawn within 3 m of a rock. `[GAMEPLAY]`
 
 ### 5.6 End of a dive
 
@@ -414,6 +421,7 @@ Each row must become an automated test (name contains the ID). Tolerances are in
 | AC-4.5 | Sell 1 sardine + 1 grouper | +85 money |
 | AC-4.6 | Shot into a sardine school | exactly one sardine caught |
 | AC-4.7 | Player speed < 0.3 m/s for 1.5 s | dentex moves toward the player |
+| AC-4.8 | Arrow passes through a jellyfish or a moray; arrow aimed at a retreated grouper | no catch in all cases; the arrow continues (or hits the rock behind) |
 
 ### 9.5 World
 
@@ -431,6 +439,8 @@ Each row must become an automated test (name contains the ID). Tolerances are in
 | AC-5.7 | 1000 dives, one crevice | grouper 600, moray 250, empty 150 (±50 each) |
 | AC-5.8 | Two consecutive dives | identical terrain |
 | AC-5.9 | Start of a dive | shallow: 15 sardines, 4 seabream, 2 jellyfish; deep: counts follow section 5.5 |
+| AC-5.13 | Two dives with the same seed / two dives with different seeds | identical fish positions and crevice slots / different ones |
+| AC-5.14 | Every crevice in the terrain data | width 1.2 to 2.5 m, depth `CREVICE_DEPTH`, closed back wall, mouth at depth ≥ 15 m, and a clear interior: a circle of radius `DIVER_RADIUS` can travel from the mouth to the back wall |
 
 ### 9.6 Controls and movement
 
@@ -505,3 +515,16 @@ Each row must become an automated test (name contains the ID). Tolerances are in
 - Dave the Diver gameplay loop analysis: https://www.avclub.com/dave-the-diver-review-gameplay-loop-roguelike-fish-restaurant-management
 
 All other numbers in this document are `[GAMEPLAY]` and were not taken from a source.
+
+## 12. Constants added during implementation
+
+Numbers that were not in the original design were added by the coding agent and accepted here after review. Rule: when the agent needs a number that is not in this spec, it adds a named constant, reports it, and it is listed here.
+
+| Constant | Value | Added in | Meaning |
+|---|---|---|---|
+| `FISH_ROAM_SPEED` | 0.3 m/s | T07 | roaming speed of fish |
+| `SARDINE_SCHOOL_SPREAD` | 0.5 m | T07 | spread of the sardine school around its center |
+| `GENERIC_FISH_HIT_RADIUS` | 0.4 m | T07 | hit radius of the generic test fish |
+| `GENERIC_FISH_FLEE_SPEED_MULT` | 1 | T07 | flee speed of the generic test fish |
+| `FISH_DEFAULT_SEED` | 1 | T07 | default seed for tests only; the running game uses a fresh seed per dive |
+| sardine and seabream hit radius | 0.2 m and 0.4 m | T07 | half of the drawn size |

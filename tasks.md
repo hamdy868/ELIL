@@ -102,11 +102,16 @@ docs/trace.md            task → AC → commit log (for the presentation)
 - Build: ROAM / FLEE / return states, flee distances by size, raised-weapon multiplier, sardine school of 15, seabream near rocks fleeing to cover, spawning for the shallow zone.
 - Done when: the flee distances match AC-3.7 to 3.9 and one shot catches exactly one sardine.
 
-**T08 Crevices, grouper and moray** (est. 1 h 30)
-- Spec: 5.2, 5.5, 4, 4.1
-- AC: 4.2, 4.4, 5.7, 5.9
-- Build: 8 deep crevices, hide slots (60/25/15) from the seeded RNG each dive, grouper retreat and re-emerge, moray lunge.
-- Done when: the 1000-dive slot distribution test passes and groupers retreat and re-emerge per AC-4.2.
+**T08a Crevices, hide slots and grouper** (est. 1 h 15)
+- Spec: 0.4, 4, 4.1, 5.2, 5.5
+- AC: 4.2, 4.8 (retreated grouper part), 5.7, 5.9 (deep part, groupers only), 5.13, 5.14
+- Build: 8 crevices built from rock formations, hide slots (60/25/15) filled from the seeded RNG, a fresh seed per dive in the running game (also for the shallow spawn from T07), the grouper with front and retreated positions.
+- Done when: the 1000-dive slot test passes, the crevice validator passes, and the same seed gives the same dive.
+
+**T08b Moray eel** (est. 45 min) — *cut after the dentex if time is short*
+- Spec: 4.1
+- AC: 4.4, 4.8 (moray part)
+- Build: a moray in every crevice whose slot is moray; it lunges when the player is within 1.5 m of the mouth, costs 10 oxygen once, retracts, 3 s cooldown; arrows ignore it.
 
 **T09 Jellyfish and dentex** (est. 1 h) — *first to cut if time is short*
 - Spec: 4, 4.1

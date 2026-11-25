@@ -3,6 +3,8 @@ import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   DIVER_RADIUS,
+  SARDINE_DRAW_SIZE_PX,
+  SEABREAM_DRAW_SIZE_PX,
   OXYGEN_BAR_HEIGHT,
   OXYGEN_BAR_WIDTH,
   OXYGEN_BAR_X,
@@ -160,15 +162,16 @@ export function renderDive(ctx, state) {
   ctx.fillRect(-dir * (diverRadiusPx + 4), Math.round(diver.finSway * 2) - 1, dir * 4, 2);
   ctx.restore();
 
-  // Placeholder target, straight-flying arrows, and aiming/reload HUD.
+  // Placeholder fish, straight-flying arrows, and aiming/reload HUD.
   const hunting = state;
-  if (hunting.targetFish) {
-    ctx.fillStyle = '#e89152';
+  for (const fish of hunting.fish ?? []) {
+    const sardine = fish.type === 'sardine';
+    ctx.fillStyle = sardine ? '#b7e4c7' : '#e89152';
     ctx.beginPath();
     ctx.arc(
-      Math.round((hunting.targetFish.x - camera.x) * PIXELS_PER_METER),
-      Math.round((hunting.targetFish.y - camera.y) * PIXELS_PER_METER),
-      Math.max(1, Math.round(hunting.targetFish.radius * PIXELS_PER_METER)),
+      Math.round((fish.x - camera.x) * PIXELS_PER_METER),
+      Math.round((fish.y - camera.y) * PIXELS_PER_METER),
+      (sardine ? SARDINE_DRAW_SIZE_PX : SEABREAM_DRAW_SIZE_PX) / 2,
       0,
       Math.PI * 2
     );

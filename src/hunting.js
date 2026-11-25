@@ -1,14 +1,13 @@
-import { ARROW_SPEED, DIVER_RADIUS, RELOAD_TIME, SPEAR_RANGE } from './constants.js';
+import { ARROW_SPEED, RELOAD_TIME, SPEAR_RANGE } from './constants.js';
 import { applyShot } from './oxygen.js';
 
-/** Create hunting state and a stationary placeholder target for T06. */
-export function createHuntingState({ x = 0, y = 0, spearRange = SPEAR_RANGE } = {}) {
+/** Create weapon state. Fish are owned by the fish population system. */
+export function createHuntingState({ spearRange = SPEAR_RANGE } = {}) {
   return {
     weaponRaised: false,
     reloadRemaining: 0,
     arrows: [],
     spearRange,
-    targetFish: { x: x + spearRange / 2, y, radius: DIVER_RADIUS },
     mouseX: null,
     mouseY: null,
   };
@@ -19,6 +18,7 @@ function segmentCircleTime(startX, startY, endX, endY, circle) {
   const dy = endY - startY;
   const fx = startX - circle.x;
   const fy = startY - circle.y;
+  if (fx * fx + fy * fy <= circle.radius * circle.radius) return 0;
   const a = dx * dx + dy * dy;
   if (a === 0) return fx * fx + fy * fy <= circle.radius * circle.radius ? 0 : null;
   const b = 2 * (fx * dx + fy * dy);
@@ -42,10 +42,11 @@ function advanceArrow(arrow, state, dt) {
     const t = segmentCircleTime(arrow.x, arrow.y, endX, endY, rock);
     if (t !== null && (!firstHit || t < firstHit.t)) firstHit = { type: 'rock', t };
   }
-  const fish = state.targetFish;
-  if (fish) {
+  for (const fish of state.fish ?? []) {
     const t = segmentCircleTime(arrow.x, arrow.y, endX, endY, fish);
-    if (t !== null && (!firstHit || t < firstHit.t)) firstHit = { type: 'fish', t };
+    if (t !== null && (!firstHit || t < firstHit.t)) {
+      firstHit = { type: 'fish', t, fishId: fish.id };
+    }
   }
   if (firstHit) {
     return {
@@ -56,6 +57,7 @@ function advanceArrow(arrow, state, dt) {
         distance: arrow.distance + travel * firstHit.t,
       },
       hit: firstHit.type,
+      fishId: firstHit.fishId,
       removed: true,
     };
   }
@@ -80,11 +82,12 @@ export function stepHunting(state, input = {}, dt = 0) {
   for (const arrow of state.arrows ?? []) {
     const result = advanceArrow(arrow, next, dt);
     if (result.hit === 'fish') {
+      const caughtFish = (next.fish ?? []).find((fish) => fish.id === result.fishId);
       next = {
         ...next,
         fishCarried: (next.fishCarried ?? 0) + 1,
-        catchList: [...(next.catchList ?? []), 'dummy'],
-        targetFish: null,
+        catchList: [...(next.catchList ?? []), caughtFish?.type ?? 'fish'],
+        fish: (next.fish ?? []).filter((fish) => fish.id !== result.fishId),
       };
     } else if (!result.removed) {
       arrows.push(result.arrow);
