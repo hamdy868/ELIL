@@ -9,3 +9,4 @@ T07 | AC-3.7 to 3.11, AC-4.1, AC-4.6 | Fish: generic flee states, sardine school
 T08a | AC-4.2, AC-4.8 (retreated grouper), AC-5.7, AC-5.9 (deep groupers only), AC-5.13, AC-5.14 | Crevices, seeded hide slots, grouper retreat/emergence, moray markers, and terrain validator
 T10a | AC-5.4, AC-5.5, AC-5.15, AC-5.16, AC-8.6, AC-8.7 | Light, darkness, creature visibility, and low-oxygen edge darkening
 T08c | AC-4.9, AC-4.10, AC-4.11, AC-5.17 | Grouper retreat threshold, crevice line of sight, and fixed layout variety
+T11 | AC-4.5, AC-7.1 to AC-7.8 | Economy, upgrade purchases, profile storage fallback, successful dive sales, and temporary result controls

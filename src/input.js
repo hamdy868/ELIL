@@ -1,4 +1,10 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH, PIXELS_PER_METER } from './constants.js';
+import {
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
+  PIXELS_PER_METER,
+  TEMP_RESULT_PURCHASE_KEYS,
+  TEMP_RESULT_RESET_KEY,
+} from './constants.js';
 
 /**
  * Convert client pointer coordinates into world coordinates in meters.
@@ -89,6 +95,11 @@ export function createInput(targetWindow, canvas) {
         equalize: keys.has('KeyE') || keys.has('e') || keys.has('E'),
         // TEMPORARY: Enter starts a new dive until T12 (Screens) is implemented.
         restart: keys.has('Enter') || keys.has('NumpadEnter'),
+        // TEMPORARY: result-screen upgrade and reset shortcuts until T12.
+        purchaseKey: TEMP_RESULT_PURCHASE_KEYS.findIndex((code, index) =>
+          keys.has(code) || keys.has(`Numpad${index + 1}`)
+        ) + 1 || null,
+        resetProfile: keys.has(TEMP_RESULT_RESET_KEY) || keys.has('r') || keys.has('R'),
         mouseX: worldMouse.mouseX,
         mouseY: worldMouse.mouseY,
         fireHeld,

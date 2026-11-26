@@ -135,6 +135,9 @@ export const GROUPER_EMERGE_DISTANCE = 8;
 export const GROUPER_EMERGE_TIME = 4;
 export const GROUPER_FLEE_SPEED_MULT = 0.8;
 export const GROUPER_VALUE = 80;
+export const SARDINE_VALUE = 5;
+export const SEABREAM_VALUE = 20;
+export const DENTEX_VALUE = 120;
 export const GROUPER_DRAW_SIZE_PX = 20;
 export const MORAY_MARKER_SIZE_PX = 4;
 export const CREVICE_SIDE_WALL_STACK_OFFSET = (CREVICE_DEPTH + 2 * DIVER_RADIUS) / 2;
@@ -147,6 +150,25 @@ export const ASCENT_RISK_DEPTH = 10;
 export const ASCENT_RISK_MULT = 1.5;
 export const ASCENT_SPEED = 1.5;
 export const ASCENT_SAFETY = 1.25;
+
+// Economy and upgrade tables (Spec 7, 7.1)
+export const LUNG_UPGRADE_VALUES = [OXYGEN_MAX_BASE, 125, 155];
+export const LUNG_UPGRADE_PRICES = [100, 250];
+export const RANGE_UPGRADE_VALUES = [SPEAR_RANGE, 7, 8];
+export const RANGE_UPGRADE_PRICES = [120, 300];
+export const LIGHT_UPGRADE_VALUES = [LIGHT_RADIUS, 6.5, 8];
+export const LIGHT_UPGRADE_PRICES = [80, 200];
+export const NET_UPGRADE_VALUES = [WEIGHT_PER_FISH, 0.02, 0.01];
+export const NET_UPGRADE_PRICES = [80, 200];
+export const UPGRADE_KEYS = ['lung', 'range', 'light', 'net'];
+export const PROFILE_STORAGE_KEY = 'elil.profile';
+export const TEMP_RESULT_PURCHASE_KEYS = ['Digit1', 'Digit2', 'Digit3', 'Digit4'];
+export const TEMP_RESULT_RESET_KEY = 'KeyR';
+export const TEMP_RESULT_INSTRUCTIONS = '1 Lung  2 Range  3 Light  4 Net | R Reset | Enter: new dive';
+export const RESULT_PANEL_HEIGHT = 64;
+export const RESULT_PANEL_TITLE_OFFSET = 17;
+export const RESULT_PANEL_DETAILS_OFFSET = 2;
+export const RESULT_PANEL_CONTROLS_OFFSET = 25;
 
 // Dive state machine (Spec 5.6)
 export const DIVE_ARM_DEPTH = 1.0;

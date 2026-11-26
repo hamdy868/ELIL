@@ -20,10 +20,16 @@ import {
   LOW_OXYGEN_THRESHOLD,
   LOW_OXYGEN_EDGE_WIDTH_PX,
   LOW_OXYGEN_EDGE_ALPHA_MAX,
+  RESULT_PANEL_HEIGHT,
+  RESULT_PANEL_TITLE_OFFSET,
+  RESULT_PANEL_DETAILS_OFFSET,
+  RESULT_PANEL_CONTROLS_OFFSET,
+  TEMP_RESULT_INSTRUCTIONS,
 } from './constants.js';
 import { darknessAt, isCreatureVisible, lightRadius } from './lighting.js';
 import {
   getDepthCounterText,
+  getDiveResultDetails,
   getDiveResultText,
   getEarHud,
   getOxygenBarHud,
@@ -335,13 +341,16 @@ export function renderDive(ctx, state) {
   const resultText = getDiveResultText(state.phase);
   if (resultText && typeof ctx.fillText === 'function') {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-    ctx.fillRect(0, Math.floor(CANVAS_HEIGHT / 2) - 18, CANVAS_WIDTH, 36);
+    const centerY = Math.floor(CANVAS_HEIGHT / 2);
+    ctx.fillRect(0, centerY - RESULT_PANEL_HEIGHT / 2, CANVAS_WIDTH, RESULT_PANEL_HEIGHT);
     ctx.fillStyle = '#ffffff';
     ctx.font = '12px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(resultText, CANVAS_WIDTH / 2, Math.floor(CANVAS_HEIGHT / 2) - 2);
+    ctx.fillText(resultText, CANVAS_WIDTH / 2, centerY - RESULT_PANEL_TITLE_OFFSET);
     ctx.font = '8px monospace';
-    ctx.fillText('Press Enter for new dive', CANVAS_WIDTH / 2, Math.floor(CANVAS_HEIGHT / 2) + 12);
+    const details = getDiveResultDetails(state.result);
+    if (details) ctx.fillText(details, CANVAS_WIDTH / 2, centerY + RESULT_PANEL_DETAILS_OFFSET);
+    ctx.fillText(TEMP_RESULT_INSTRUCTIONS, CANVAS_WIDTH / 2, centerY + RESULT_PANEL_CONTROLS_OFFSET);
   }
 }
 

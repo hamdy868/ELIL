@@ -62,3 +62,13 @@ test('AC-8.5: debt 100 shows injury message, injury icon, and injury line depth'
   assert.equal(hud.injuryMessage, 'Ears injured - cannot dive deeper');
   assert.equal(hud.injuryLineDepth, 24.5);
 });
+
+test('AC-4.5: successful result text shows fish sold, profit, and total money', async () => {
+  const { getDiveResultDetails } = await import('../src/ui.js');
+  assert.equal(getDiveResultDetails({
+    outcome: DIVE_PHASE_SUCCESS,
+    fish: ['sardine', 'grouper'],
+    profit: 85,
+    totalMoney: 135,
+  }), 'Sold: sardine, grouper | Profit: 85 | Total: 135');
+});

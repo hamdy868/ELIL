@@ -107,3 +107,12 @@ export function getDiveResultText(phase) {
   if (phase === DIVE_PHASE_BLACKOUT) return 'You blacked out';
   return null;
 }
+
+/** Format successful dive sale details for the result screen. */
+export function getDiveResultDetails(result) {
+  if (result?.outcome !== DIVE_PHASE_SUCCESS) return null;
+  const counts = new Map();
+  for (const fish of result.fish ?? []) counts.set(fish, (counts.get(fish) ?? 0) + 1);
+  const sold = [...counts].map(([fish, count]) => count > 1 ? `${fish} x${count}` : fish).join(', ') || 'none';
+  return `Sold: ${sold} | Profit: ${result.profit ?? 0} | Total: ${result.totalMoney ?? 0}`;
+}

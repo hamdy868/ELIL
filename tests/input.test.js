@@ -49,3 +49,17 @@ test('input tracks WASD, Shift, and mouse world coordinates', () => {
 
   input.destroy();
 });
+
+test('temporary result controls expose purchases 1 to 4 and reset R', () => {
+  const target = createMockTarget();
+  const input = createInput(target, null);
+  target.emit('keydown', { code: 'Digit3' });
+  target.emit('keydown', { code: 'KeyR' });
+  assert.equal(input.getInput({ x: 0, y: 0 }).purchaseKey, 3);
+  assert.equal(input.getInput({ x: 0, y: 0 }).resetProfile, true);
+  target.emit('keyup', { code: 'Digit3' });
+  target.emit('keyup', { code: 'KeyR' });
+  assert.equal(input.getInput({ x: 0, y: 0 }).purchaseKey, null);
+  assert.equal(input.getInput({ x: 0, y: 0 }).resetProfile, false);
+  input.destroy();
+});

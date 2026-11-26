@@ -64,6 +64,8 @@ test('AC-5.6: reaching surface at any x after being deeper than 1 m ends dive in
   assert.deepEqual(state.result, {
     outcome: DIVE_PHASE_SUCCESS,
     fish: ['sardine', 'grouper'],
+    profit: 85,
+    totalMoney: 85,
   });
 });
 

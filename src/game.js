@@ -7,6 +7,8 @@ import {
   FISH_DEFAULT_SEED,
   FIXED_DT,
   OXYGEN_MAX_BASE,
+  SPEAR_RANGE,
+  WEIGHT_PER_FISH,
 } from './constants.js';
 import { equalize, stepEar } from './ear.js';
 import { stepOxygen } from './oxygen.js';
@@ -15,6 +17,8 @@ import { createHuntingState, stepHunting } from './hunting.js';
 import { createRng } from './rng.js';
 import { createGrouper, spawnShallowFish, stepFishPopulation } from './fish.js';
 import { assignCreviceSlots } from './world.js';
+import { createProfile, sellCatch, upgradeValue } from './economy.js';
+import { lightRadius } from './lighting.js';
 
 const STEP_EPSILON = 1e-12;
 
@@ -44,7 +48,11 @@ export function createFixedLoop(onStep, dt = FIXED_DT) {
  * @param {object} [options]
  */
 export function createGameState({ profile, oxygenMax, terrain, seed = FISH_DEFAULT_SEED } = {}) {
-  const maxOx = oxygenMax ?? profile?.upgrades?.oxygenMax ?? OXYGEN_MAX_BASE;
+  const activeProfile = profile ?? createProfile();
+  const maxOx = oxygenMax ?? upgradeValue(activeProfile, 'lung') ?? OXYGEN_MAX_BASE;
+  const spearRange = upgradeValue(activeProfile, 'range') ?? SPEAR_RANGE;
+  const flashlightLevel = activeProfile.upgrades?.light ?? 0;
+  const activeWeightPerFish = upgradeValue(activeProfile, 'net') ?? WEIGHT_PER_FISH;
   const dive = createDiveState(terrain ? { terrain } : {});
   const rng = createRng(seed);
   const diveTerrain = {
@@ -64,10 +72,13 @@ export function createGameState({ profile, oxygenMax, terrain, seed = FISH_DEFAU
   return {
     ...dive,
     terrain: diveTerrain,
-    ...createHuntingState(),
+    ...createHuntingState({ spearRange }),
     fish,
     morayMarkers,
-    profile: profile ?? { money: 0, upgrades: {} },
+    profile: activeProfile,
+    flashlightLevel,
+    lightRadius: lightRadius(flashlightLevel),
+    weightPerFish: activeWeightPerFish,
     phase: DIVE_PHASE_DIVING,
     oxygen: maxOx,
     oxygenMax: maxOx,
@@ -155,8 +166,10 @@ export function stepDive(state, input = {}, dt = FIXED_DT) {
 
   if (diveArmed && nextDepth <= 0) {
     const fish = [...(nextWithFish.catchList ?? [])];
+    const sale = sellCatch(nextWithFish.profile ?? createProfile(), fish);
     return {
       ...nextWithFish,
+      profile: sale.profile,
       phase: DIVE_PHASE_SUCCESS,
       oxygen: current.oxygenMax,
       requiredOxygen: 0,
@@ -171,6 +184,8 @@ export function stepDive(state, input = {}, dt = FIXED_DT) {
       result: {
         outcome: DIVE_PHASE_SUCCESS,
         fish,
+        profit: sale.total,
+        totalMoney: sale.profile.money,
       },
     };
   }
