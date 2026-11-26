@@ -154,9 +154,9 @@ docs/trace.md            task → AC → commit log (for the presentation)
 - Spec: 8.3
 - Build: edge pulses for ear stages, injury message, blackout fade, hit flashes.
 
-**T14 Sprites swap** (est. 1 h) — *art track, can run in parallel from Day 1*
-- Spec: 8.5
-- Build: replace placeholders with the generated pixel art in this order: diver, fish, rocks and seabed, seagrass layers, boat, logo. Logic must not change.
+**T14 Sprites swap** (est. 1 h) — *the art is ready in assets/, see assets/MANIFEST.md*
+- Spec: 8.1, 8.5
+- Build: replace the placeholders with the sprites, in this order: diver, fish, rock and seabed tiles, seagrass. Facing follows the movement direction (flip horizontally). Animate by alternating frames (about 4 frames per second, faster when swimming fast). Aiming rotates the swim sprite toward the mouse and draws the speargun as a short line in code. Fill rock circles with the rock tile clipped to the circles, and the seabed with the sand tile. Draw seagrass before the seabed fill. Logic and hit radii must not change, and all tests must still pass.
 
 **T15 Tuning pass** (est. 45 min)
 - Play five full dives. Change only `constants.js`. If a number changes, tell the author so `spec.md` is updated first.

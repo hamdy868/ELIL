@@ -298,7 +298,7 @@ Why these numbers matter:
 ### 8.1 Rendering `[GAMEPLAY]`
 
 - Draw on a 384×216 canvas and scale up by integer factors with `image-rendering: pixelated` (about 12.8 px per meter). Letterbox when the window does not fit exactly. No smoothing.
-- Diver about 32 px tall. Fish are drawn larger than life so they are readable: sardine 5 px, seabream 10 px, grouper and dentex 20 px.
+- Sprite sizes (frame width in px): diver 44, sardine 14, seabream 20, grouper 30, dentex 30, jellyfish 14, moray 32. Fish are drawn larger than life so they are readable. Hit radii are logic and do not change with the sprites. The ready sprites are in `assets/` and described in `assets/MANIFEST.md`.
 - UI language: English.
 
 ### 8.2 HUD
@@ -349,7 +349,7 @@ Purpose: the player must be able to learn every rule and the physics of the game
 
 | Asset | Count | Note |
 |---|---|---|
-| Diver (swim + aiming pose) | 4–6 frames | side view, long fins |
+| Diver swim | 2 frames | ready. The aiming pose reuses the swim sprite rotated toward the mouse, with the speargun drawn in code |
 | The four fish | 2 frames each | sardine, seabream, grouper, dentex |
 | Jellyfish and moray | 2–3 frames each | |
 | Rocks and seabed | 6–8 tileable pieces | |
