@@ -1,10 +1,4 @@
-import {
-  CANVAS_HEIGHT,
-  CANVAS_WIDTH,
-  PIXELS_PER_METER,
-  TEMP_RESULT_PURCHASE_KEYS,
-  TEMP_RESULT_RESET_KEY,
-} from './constants.js';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, PIXELS_PER_METER } from './constants.js';
 
 /**
  * Convert client pointer coordinates into world coordinates in meters.
@@ -33,6 +27,7 @@ export function createInput(targetWindow, canvas) {
   const keys = new Set();
   let pointer = null;
   let fireHeld = false;
+  let pendingClick = false;
 
   function normalizeKey(event) {
     if (event.code) return event.code;
@@ -50,6 +45,7 @@ export function createInput(targetWindow, canvas) {
   function onBlur() {
     keys.clear();
     fireHeld = false;
+    pendingClick = false;
   }
 
   function onMouseMove(event) {
@@ -57,7 +53,10 @@ export function createInput(targetWindow, canvas) {
   }
 
   function onMouseDown(event) {
-    if (event.button === 0) fireHeld = true;
+    if (event.button === 0) {
+      fireHeld = true;
+      pendingClick = true;
+    }
   }
 
   function onMouseUp(event) {
@@ -82,6 +81,11 @@ export function createInput(targetWindow, canvas) {
               camera
             )
           : { mouseX: null, mouseY: null };
+      const point = pointer && canvas
+        ? clientToCanvas(pointer.clientX, pointer.clientY, canvas.getBoundingClientRect())
+        : { x: null, y: null };
+      const clicked = pendingClick;
+      pendingClick = false;
 
       return {
         up: keys.has('KeyW') || keys.has('w') || keys.has('W'),
@@ -93,13 +97,11 @@ export function createInput(targetWindow, canvas) {
           keys.has('ShiftRight') ||
           keys.has('Shift'),
         equalize: keys.has('KeyE') || keys.has('e') || keys.has('E'),
-        // TEMPORARY: Enter starts a new dive until T12 (Screens) is implemented.
-        restart: keys.has('Enter') || keys.has('NumpadEnter'),
-        // TEMPORARY: result-screen upgrade and reset shortcuts until T12.
-        purchaseKey: TEMP_RESULT_PURCHASE_KEYS.findIndex((code, index) =>
-          keys.has(code) || keys.has(`Numpad${index + 1}`)
-        ) + 1 || null,
-        resetProfile: keys.has(TEMP_RESULT_RESET_KEY) || keys.has('r') || keys.has('R'),
+        confirm: keys.has('Enter') || keys.has('NumpadEnter'),
+        back: keys.has('Escape'),
+        click: clicked,
+        screenX: point.x,
+        screenY: point.y,
         mouseX: worldMouse.mouseX,
         mouseY: worldMouse.mouseY,
         fireHeld,
@@ -113,5 +115,14 @@ export function createInput(targetWindow, canvas) {
       targetWindow.removeEventListener('mousedown', onMouseDown);
       targetWindow.removeEventListener('mouseup', onMouseUp);
     },
+  };
+}
+
+function clientToCanvas(clientX, clientY, rect) {
+  const scaleX = rect.width > 0 ? CANVAS_WIDTH / rect.width : 1;
+  const scaleY = rect.height > 0 ? CANVAS_HEIGHT / rect.height : 1;
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY,
   };
 }

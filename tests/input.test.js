@@ -50,16 +50,30 @@ test('input tracks WASD, Shift, and mouse world coordinates', () => {
   input.destroy();
 });
 
-test('temporary result controls expose purchases 1 to 4 and reset R', () => {
+test('T12 uses click, Enter, and Escape navigation instead of temporary result shortcuts', () => {
   const target = createMockTarget();
-  const input = createInput(target, null);
+  const mockCanvas = {
+    getBoundingClientRect: () => ({ left: 100, top: 50, width: CANVAS_WIDTH * 2, height: CANVAS_HEIGHT * 2 }),
+  };
+  const input = createInput(target, mockCanvas);
   target.emit('keydown', { code: 'Digit3' });
   target.emit('keydown', { code: 'KeyR' });
-  assert.equal(input.getInput({ x: 0, y: 0 }).purchaseKey, 3);
-  assert.equal(input.getInput({ x: 0, y: 0 }).resetProfile, true);
+  target.emit('keydown', { code: 'Enter' });
+  target.emit('keydown', { code: 'Escape' });
+  target.emit('mousemove', { clientX: 100 + CANVAS_WIDTH, clientY: 50 + CANVAS_HEIGHT });
+  target.emit('mousedown', { button: 0 });
+  const snapshot = input.getInput({ x: 0, y: 0 });
+  assert.equal(snapshot.confirm, true);
+  assert.equal(snapshot.back, true);
+  assert.equal(snapshot.click, true);
+  assert.equal(snapshot.screenX, CANVAS_WIDTH / 2);
+  assert.equal(snapshot.screenY, CANVAS_HEIGHT / 2);
+  assert.equal('purchaseKey' in snapshot, false);
+  assert.equal('resetProfile' in snapshot, false);
+  assert.equal(input.getInput({ x: 0, y: 0 }).click, false);
+  target.emit('keyup', { code: 'Enter' });
+  target.emit('keyup', { code: 'Escape' });
   target.emit('keyup', { code: 'Digit3' });
   target.emit('keyup', { code: 'KeyR' });
-  assert.equal(input.getInput({ x: 0, y: 0 }).purchaseKey, null);
-  assert.equal(input.getInput({ x: 0, y: 0 }).resetProfile, false);
   input.destroy();
 });

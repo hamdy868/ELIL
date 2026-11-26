@@ -148,6 +148,7 @@ export function stepDive(state, input = {}, dt = FIXED_DT) {
   const elapsedTime = (current.elapsedTime ?? 0) + dt;
 
   if (nextWithFish.oxygen <= 0) {
+    const lostFish = [...(nextWithFish.catchList ?? [])];
     return {
       ...nextWithFish,
       phase: DIVE_PHASE_BLACKOUT,
@@ -159,7 +160,8 @@ export function stepDive(state, input = {}, dt = FIXED_DT) {
       elapsedTime,
       result: {
         outcome: DIVE_PHASE_BLACKOUT,
-        fish: [],
+        fish: lostFish,
+        totalMoney: nextWithFish.profile?.money ?? 0,
       },
     };
   }

@@ -69,7 +69,7 @@ test('AC-5.6: reaching surface at any x after being deeper than 1 m ends dive in
   });
 });
 
-test('AC-1.10: dive blackout clears catch and leaves profile money and upgrades unchanged', () => {
+test('AC-1.10 & AC-8.10: blackout clears the dive catch, records lost fish, and leaves profile unchanged', () => {
   const profile = { money: 180, upgrades: { lung: 1, spear: 1 } };
   const profileSnapshot = structuredClone(profile);
 
@@ -90,7 +90,8 @@ test('AC-1.10: dive blackout clears catch and leaves profile money and upgrades 
   assert.deepEqual(state.catchList, []);
   assert.deepEqual(state.result, {
     outcome: DIVE_PHASE_BLACKOUT,
-    fish: [],
+    fish: ['sardine', 'seabream', 'grouper'],
+    totalMoney: profile.money,
   });
   assert.deepEqual(profile, profileSnapshot);
   assert.deepEqual(state.profile, profileSnapshot);

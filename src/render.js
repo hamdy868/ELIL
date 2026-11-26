@@ -20,17 +20,10 @@ import {
   LOW_OXYGEN_THRESHOLD,
   LOW_OXYGEN_EDGE_WIDTH_PX,
   LOW_OXYGEN_EDGE_ALPHA_MAX,
-  RESULT_PANEL_HEIGHT,
-  RESULT_PANEL_TITLE_OFFSET,
-  RESULT_PANEL_DETAILS_OFFSET,
-  RESULT_PANEL_CONTROLS_OFFSET,
-  TEMP_RESULT_INSTRUCTIONS,
 } from './constants.js';
 import { darknessAt, isCreatureVisible, lightRadius } from './lighting.js';
 import {
   getDepthCounterText,
-  getDiveResultDetails,
-  getDiveResultText,
   getEarHud,
   getOxygenBarHud,
 } from './ui.js';
@@ -337,21 +330,6 @@ export function renderDive(ctx, state) {
     }
   }
 
-  // Minimal dive result overlay text
-  const resultText = getDiveResultText(state.phase);
-  if (resultText && typeof ctx.fillText === 'function') {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-    const centerY = Math.floor(CANVAS_HEIGHT / 2);
-    ctx.fillRect(0, centerY - RESULT_PANEL_HEIGHT / 2, CANVAS_WIDTH, RESULT_PANEL_HEIGHT);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '12px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(resultText, CANVAS_WIDTH / 2, centerY - RESULT_PANEL_TITLE_OFFSET);
-    ctx.font = '8px monospace';
-    const details = getDiveResultDetails(state.result);
-    if (details) ctx.fillText(details, CANVAS_WIDTH / 2, centerY + RESULT_PANEL_DETAILS_OFFSET);
-    ctx.fillText(TEMP_RESULT_INSTRUCTIONS, CANVAS_WIDTH / 2, centerY + RESULT_PANEL_CONTROLS_OFFSET);
-  }
 }
 
 function drawDarknessMask(ctx, diver, camera, darkness, radiusMeters) {
